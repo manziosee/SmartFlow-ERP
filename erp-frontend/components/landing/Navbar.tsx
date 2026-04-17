@@ -56,7 +56,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-3">
             <Link
-              href="/auth/login"
+              href="/login"
               className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
                 isScrolled
                   ? 'text-slate-700 hover:bg-slate-100'
@@ -66,7 +66,7 @@ export default function Navbar() {
               Sign In
             </Link>
             <Link
-              href="/auth/register"
+              href="/register"
               className="text-sm font-semibold px-5 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg hover:from-blue-700 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg"
             >
               Start Free Trial
@@ -96,10 +96,10 @@ export default function Navbar() {
               </a>
             ))}
             <div className="pt-2 pb-1 flex flex-col gap-2">
-              <Link href="/auth/login" className="text-center px-4 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg">
+              <Link href="/login" className="text-center px-4 py-2.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg">
                 Sign In
               </Link>
-              <Link href="/auth/register" className="text-center px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg">
+              <Link href="/register" className="text-center px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-500 rounded-lg">
                 Start Free Trial
               </Link>
             </div>

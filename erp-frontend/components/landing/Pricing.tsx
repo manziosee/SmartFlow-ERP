@@ -136,7 +136,7 @@ export default function Pricing() {
               </ul>
 
               <Link
-                href="/auth/register"
+                href="/register"
                 className={`block text-center py-3 px-6 rounded-xl font-semibold text-sm ${plan.buttonClass} transition-all`}
               >
                 Get Started

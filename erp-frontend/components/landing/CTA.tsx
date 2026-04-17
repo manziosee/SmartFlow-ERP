@@ -36,14 +36,14 @@ export default function CTA() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            href="/auth/register"
+            href="/register"
             className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg hover:shadow-blue-500/30 hover:scale-105 text-base"
           >
             Start Your Free Trial
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/auth/login"
+            href="/login"
             className="px-8 py-4 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/10 transition-all text-base"
           >
             Sign In
