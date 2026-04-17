@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, AlertTriangle, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { AlertTriangle, TrendingUp, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { NavIcons } from "@/components/ui/logo";
 
 const insights = [
   {
@@ -45,8 +46,8 @@ export function AIInsights() {
     <Card className="col-span-4">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <Brain className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <NavIcons.AIInsights />
           </div>
           <div>
             <CardTitle>AI Insights</CardTitle>

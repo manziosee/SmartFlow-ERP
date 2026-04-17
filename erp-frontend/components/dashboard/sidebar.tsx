@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo, NavIcons } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,14 @@ interface SidebarProps {
 
 export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    // Clear any potential auth tokens (for future integration)
+    localStorage.removeItem("token");
+    // Redirect to login
+    router.push("/login");
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -148,6 +156,7 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
+                    onClick={handleSignOut}
                     className="flex w-full items-center justify-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
                   >
                     <LogOut className="h-5 w-5 flex-shrink-0" />
@@ -159,6 +168,7 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
               </Tooltip>
             ) : (
               <button
+                onClick={handleSignOut}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
               >
                 <LogOut className="h-5 w-5 flex-shrink-0" />

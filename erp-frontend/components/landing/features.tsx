@@ -4,10 +4,10 @@ import {
   CreditCard,
   TrendingUp,
   Bell,
-  Brain,
   Shield,
   Zap,
 } from "lucide-react";
+import { NavIcons } from "@/components/ui/logo";
 
 const features = [
   {
@@ -44,7 +44,7 @@ const features = [
     name: "AI-Powered Insights",
     description:
       "Leverage machine learning to predict cash flow, identify risks, and receive actionable recommendations.",
-    icon: Brain,
+    icon: NavIcons.AIInsights,
   },
   {
     name: "Debt Recovery",
@@ -84,7 +84,7 @@ export function FeaturesSection() {
                 <div className="absolute -inset-2 rounded-lg bg-muted/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative">
                   <dt className="flex items-center gap-x-3 text-base font-semibold leading-7">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background">
                       <feature.icon className="h-5 w-5 text-background" aria-hidden="true" />
                     </div>
                     {feature.name}

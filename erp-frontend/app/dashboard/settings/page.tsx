@@ -23,8 +23,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Upload, Building, CreditCard, Bell, Shield, Palette } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export default function SettingsPage() {
+  const { currency, setCurrency } = useCurrency();
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState({
     emailInvoice: true,
@@ -136,15 +138,15 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="currency">Default Currency</Label>
-                  <Select defaultValue="usd">
+                  <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="usd">USD - US Dollar</SelectItem>
-                      <SelectItem value="eur">EUR - Euro</SelectItem>
-                      <SelectItem value="gbp">GBP - British Pound</SelectItem>
-                      <SelectItem value="cad">CAD - Canadian Dollar</SelectItem>
+                      <SelectItem value="$">USD - US Dollar ($)</SelectItem>
+                      <SelectItem value="Rwf">RWF - Rwandan Franc (Rwf)</SelectItem>
+                      <SelectItem value="€">EUR - Euro (€)</SelectItem>
+                      <SelectItem value="£">GBP - British Pound (£)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,11 +1,15 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, FileText, Users, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const stats = [
   {
     name: "Total Revenue",
-    value: "$124,592.00",
+    value: 124592.00,
+    isCurrency: true,
     change: "+12.5%",
     changeType: "positive" as const,
     icon: DollarSign,
@@ -13,7 +17,8 @@ const stats = [
   },
   {
     name: "Outstanding Invoices",
-    value: "$23,450.00",
+    value: 23450.00,
+    isCurrency: true,
     change: "15 invoices",
     changeType: "neutral" as const,
     icon: FileText,
@@ -21,7 +26,8 @@ const stats = [
   },
   {
     name: "Active Clients",
-    value: "48",
+    value: 48,
+    isCurrency: false,
     change: "+3",
     changeType: "positive" as const,
     icon: Users,
@@ -29,7 +35,8 @@ const stats = [
   },
   {
     name: "Overdue Payments",
-    value: "$8,240.00",
+    value: 8240.00,
+    isCurrency: true,
     change: "6 invoices",
     changeType: "negative" as const,
     icon: AlertTriangle,
@@ -38,6 +45,8 @@ const stats = [
 ];
 
 export function StatsCards() {
+  const { formatCurrency } = useCurrency();
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
@@ -57,7 +66,9 @@ export function StatsCards() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="text-2xl font-bold">
+              {stat.isCurrency ? formatCurrency(stat.value as number) : stat.value}
+            </div>
             <div className="flex items-center gap-1 mt-1">
               {stat.changeType === "positive" && (
                 <TrendingUp className="h-4 w-4 text-green-600" />

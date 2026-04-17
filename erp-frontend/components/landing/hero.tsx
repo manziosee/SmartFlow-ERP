@@ -89,9 +89,8 @@ export function HeroSection() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="gap-2 h-12 px-8 text-base">
-              <Link href="#demo">
-                <Play className="h-4 w-4" />
-                Watch Demo
+              <Link href="/login">
+                Sign In
               </Link>
             </Button>
           </div>

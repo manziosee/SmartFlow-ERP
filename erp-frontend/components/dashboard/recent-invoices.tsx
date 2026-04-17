@@ -1,9 +1,12 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const invoices = [
   {
@@ -50,6 +53,8 @@ const statusStyles = {
 };
 
 export function RecentInvoices() {
+  const { formatCurrency } = useCurrency();
+
   return (
     <Card className="col-span-3">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -87,10 +92,10 @@ export function RecentInvoices() {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="font-medium">
-                    ${invoice.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {formatCurrency(invoice.amount)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Due {new Date(invoice.dueDate).toLocaleDateString()}
+                    Due {new Date(invoice.dueDate).toLocaleDateString("en-US")}
                   </p>
                 </div>
                 <Badge

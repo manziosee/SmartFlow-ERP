@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import {
   AreaChart,
   Area,
@@ -27,6 +28,8 @@ const data = [
 ];
 
 export function RevenueChart() {
+  const { formatCurrency } = useCurrency();
+
   return (
     <Card className="col-span-4">
       <CardHeader>
@@ -62,7 +65,7 @@ export function RevenueChart() {
                 tick={{ fill: "hsl(var(--muted-foreground))" }}
                 axisLine={{ stroke: "hsl(var(--border))" }}
                 tickLine={{ stroke: "hsl(var(--border))" }}
-                tickFormatter={(value) => `$${value / 1000}k`}
+                tickFormatter={(value) => formatCurrency(value / 1000) + "k"}
               />
               <Tooltip
                 contentStyle={{
@@ -71,7 +74,7 @@ export function RevenueChart() {
                   borderRadius: "8px",
                 }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
-                formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                formatter={(value: number) => [formatCurrency(value), ""]}
               />
               <Area
                 type="monotone"

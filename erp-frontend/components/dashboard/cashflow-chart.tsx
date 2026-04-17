@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import {
   BarChart,
   Bar,
@@ -20,6 +21,8 @@ const data = [
 ];
 
 export function CashflowChart() {
+  const { formatCurrency } = useCurrency();
+
   return (
     <Card className="col-span-3">
       <CardHeader>
@@ -43,7 +46,7 @@ export function CashflowChart() {
                 tick={{ fill: "hsl(var(--muted-foreground))" }}
                 axisLine={{ stroke: "hsl(var(--border))" }}
                 tickLine={{ stroke: "hsl(var(--border))" }}
-                tickFormatter={(value) => `$${Math.abs(value) / 1000}k`}
+                tickFormatter={(value) => formatCurrency(Math.abs(value) / 1000) + "k"}
               />
               <Tooltip
                 contentStyle={{
@@ -52,7 +55,7 @@ export function CashflowChart() {
                   borderRadius: "8px",
                 }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
-                formatter={(value: number) => [`$${Math.abs(value).toLocaleString()}`, ""]}
+                formatter={(value: number) => [formatCurrency(Math.abs(value)), ""]}
               />
               <Bar dataKey="inflow" name="Inflow" radius={[4, 4, 0, 0]}>
                 {data.map((_, index) => (
