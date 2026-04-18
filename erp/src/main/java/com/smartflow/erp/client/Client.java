@@ -28,13 +28,22 @@ public class Client {
     private String contactEmail;
     private String contactPhone;
 
-    // Financial Tracking & AI ML scoring
+    // Financial Aggregates & AI ML scoring
     @Builder.Default
     private BigDecimal lifetimeRevenue = BigDecimal.ZERO;
+
+    @Builder.Default
+    private BigDecimal totalOutstandingAmount = BigDecimal.ZERO;
+
+    @Builder.Default
+    private BigDecimal totalPaidAmount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private RiskScore riskScore = RiskScore.LOW;
+
+    @Builder.Default
+    private Integer riskIndex = 0; // 0-100 scale
 
     @Builder.Default
     private Integer averagePaymentDelayDays = 0;

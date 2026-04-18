@@ -1,34 +1,35 @@
-import { StatsCards } from "@/components/dashboard/stats-cards";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { RecentInvoices } from "@/components/dashboard/recent-invoices";
-import { AIInsights } from "@/components/dashboard/ai-insights";
-import { CashflowChart } from "@/components/dashboard/cashflow-chart";
+"use client";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { BusinessDashboard } from "@/components/dashboard/roles/BusinessDashboard";
+import { AccountantDashboard } from "@/components/dashboard/roles/AccountantDashboard";
+import { RecoveryDashboard } from "@/components/dashboard/roles/RecoveryDashboard";
+import { ClientDashboard } from "@/components/dashboard/roles/ClientDashboard";
+import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
-  return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here&apos;s an overview of your business.
-        </p>
-      </div>
+  const { user, isLoading } = useAuth();
 
-      {/* Stats Cards */}
-      <StatsCards />
-
-      {/* Charts Row */}
-      <div className="grid gap-6 lg:grid-cols-7">
-        <RevenueChart />
-        <CashflowChart />
+  if (isLoading) {
+    return (
+      <div className="flex h-[70vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
 
-      {/* Bottom Row */}
-      <div className="grid gap-6 lg:grid-cols-7">
-        <RecentInvoices />
-        <AIInsights />
-      </div>
-    </div>
-  );
+  // Route to specific dashboards based on role
+  switch (user?.role) {
+    case "ADMIN":
+    case "MANAGER":
+      return <BusinessDashboard />;
+    case "ACCOUNTANT":
+      return <AccountantDashboard />;
+    case "RECOVERY_AGENT":
+      return <RecoveryDashboard />;
+    case "CLIENT":
+      return <ClientDashboard />;
+    default:
+      return <BusinessDashboard />;
+  }
 }

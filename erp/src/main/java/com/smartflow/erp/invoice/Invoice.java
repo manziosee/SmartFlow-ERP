@@ -33,15 +33,28 @@ public class Invoice {
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @Builder.Default
+    private BigDecimal taxAmount = BigDecimal.ZERO;
+
+    @Builder.Default
+    private String currency = "RWF";
+
     private LocalDate issueDate;
     private LocalDate dueDate;
+
+    // AI Predictions
+    private LocalDate predictedPaymentDate;
+    
+    @Builder.Default
+    private Double riskFactor = 0.0; // 0.0 (Safe) to 1.0 (High Risk)
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Status status = Status.PENDING;
 
     // AI/Notification logic
-    private Integer reminderCount;
+    @Builder.Default
+    private Integer reminderCount = 0;
     private LocalDateTime lastReminderSentAt;
 
     @Column(updatable = false)

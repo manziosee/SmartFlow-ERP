@@ -73,6 +73,6 @@ public class User implements UserDetails {
     }
 
     public enum Role {
-        ADMIN, ACCOUNTANT, SALES
+        ADMIN, MANAGER, ACCOUNTANT, RECOVERY_AGENT, CLIENT
     }
 }

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 const invoices = [
@@ -52,14 +52,19 @@ const statusStyles = {
   overdue: "bg-red-100 text-red-700 border-red-200",
 };
 
-export function RecentInvoices() {
+interface RecentInvoicesProps {
+  title?: string;
+  className?: string;
+}
+
+export function RecentInvoices({ title = "Recent Invoices", className = "col-span-3" }: RecentInvoicesProps) {
   const { formatCurrency } = useCurrency();
 
   return (
-    <Card className="col-span-3">
+    <Card className={cn(className)}>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Recent Invoices</CardTitle>
+          <CardTitle>{title}</CardTitle>
           <CardDescription>Latest invoice activity</CardDescription>
         </div>
         <Button variant="ghost" size="sm" asChild>
@@ -95,7 +100,7 @@ export function RecentInvoices() {
                     {formatCurrency(invoice.amount)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Due {new Date(invoice.dueDate).toLocaleDateString("en-US")}
+                    Due {formatDate(invoice.dueDate)}
                   </p>
                 </div>
                 <Badge
