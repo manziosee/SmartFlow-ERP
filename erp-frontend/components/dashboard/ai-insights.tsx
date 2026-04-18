@@ -1,99 +1,123 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { AlertTriangle, TrendingUp, Clock, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { NavIcons } from "@/components/ui/logo";
+import { toast } from "sonner";
 
-const insights = [
-  {
-    type: "warning",
-    icon: AlertTriangle,
-    title: "High-Risk Invoice Detected",
-    description: "Invoice #INV-003 from Global Dynamics has a 78% probability of becoming overdue based on payment history.",
-    action: "View Details",
-    href: "/dashboard/invoices/INV-003",
-    priority: "high",
-  },
-  {
-    type: "opportunity",
-    icon: TrendingUp,
-    title: "Cash Flow Optimization",
-    description: "Sending invoices 2 days earlier could improve collection time by 15%, based on your payment patterns.",
-    action: "Learn More",
-    href: "/dashboard/insights",
-    priority: "medium",
-  },
-  {
-    type: "reminder",
-    icon: Clock,
-    title: "Follow-up Recommended",
-    description: "3 invoices are approaching their due dates. Sending reminders now could prevent late payments.",
-    action: "Send Reminders",
-    href: "/dashboard/invoices?filter=due-soon",
-    priority: "medium",
-  },
-];
+interface InsightData {
+  type: string;
+  priority: string;
+  title: string;
+  description: string;
+  targetId?: string;
+}
+
+const iconMap: Record<string, any> = {
+  DEBT_RECOVERY: AlertTriangle,
+  CASHFLOW: TrendingUp,
+  DEFAULT: Sparkles
+};
 
 const priorityStyles = {
-  high: "border-l-4 border-l-destructive",
-  medium: "border-l-4 border-l-yellow-500",
-  low: "border-l-4 border-l-green-500",
+  HIGH: "border-l-4 border-l-destructive",
+  MEDIUM: "border-l-4 border-l-yellow-500",
+  LOW: "border-l-4 border-l-green-500",
 };
 
 export function AIInsights() {
+  const [insights, setInsights] = useState<InsightData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchInsights() {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AI_API_URL}/insights`);
+        if (!response.ok) throw new Error("Failed to fetch AI insights");
+        const data = await response.json();
+        setInsights(data);
+      } catch (error) {
+        console.error("AI Insight Error:", error);
+        // Fallback or error message
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchInsights();
+  }, []);
+
   return (
-    <Card className="col-span-4">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <Card className="col-span-4 rounded-[2rem] border-none shadow-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between bg-primary/5 pb-8">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <NavIcons.AIInsights />
           </div>
           <div>
-            <CardTitle>AI Insights</CardTitle>
-            <CardDescription>Smart recommendations for your business</CardDescription>
+            <CardTitle className="text-xl font-black">AI Insights</CardTitle>
+            <CardDescription className="font-bold">Smart recommendations for your business</CardDescription>
           </div>
         </div>
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="ghost" size="sm" asChild className="font-bold hover:bg-primary/10 transition-colors">
           <Link href="/dashboard/insights" className="gap-1">
             View all
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {insights.map((insight, index) => (
-            <div
-              key={index}
-              className={cn(
-                "rounded-lg bg-muted/50 p-4",
-                priorityStyles[insight.priority as keyof typeof priorityStyles]
-              )}
-            >
-              <div className="flex items-start gap-4">
-                <div className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0",
-                  insight.priority === "high" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-                )}>
-                  <insight.icon className="h-5 w-5" />
+      <CardContent className="pt-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm font-black text-muted-foreground animate-pulse">Analyzing Financial Patterns...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {insights.map((insight, index) => {
+              const Icon = iconMap[insight.type] || iconMap.DEFAULT;
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "rounded-3xl bg-muted/30 p-5 transition-all hover:bg-muted/50 border border-transparent hover:border-primary/10",
+                    priorityStyles[insight.priority as keyof typeof priorityStyles]
+                  )}
+                >
+                  <div className="flex items-start gap-5">
+                    <div className={cn(
+                      "flex h-11 w-11 items-center justify-center rounded-2xl flex-shrink-0 shadow-sm",
+                      insight.priority === "HIGH" ? "bg-destructive/10 text-destructive" : "bg-background text-primary"
+                    )}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-black text-base">{insight.title}</h4>
+                      <p className="text-sm font-bold text-muted-foreground mt-2 leading-relaxed">
+                        {insight.description}
+                      </p>
+                      <div className="flex gap-4 mt-4">
+                        <Button variant="secondary" size="sm" className="rounded-xl font-bold h-9 bg-background shadow-sm hover:shadow-md transition-all" asChild>
+                          <Link href={insight.targetId ? `/dashboard/invoices/${insight.targetId}` : "/dashboard/insights"}>
+                            Action Required
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium">{insight.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {insight.description}
-                  </p>
-                  <Button variant="link" size="sm" className="px-0 mt-2" asChild>
-                    <Link href={insight.href}>
-                      {insight.action}
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+            {insights.length === 0 && (
+               <div className="text-center py-8">
+                  <p className="text-sm font-bold text-muted-foreground italic">No critical insights detected today.</p>
+               </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
