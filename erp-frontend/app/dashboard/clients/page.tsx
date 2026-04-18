@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -46,10 +47,33 @@ import {
   TrendingUp,
   AlertTriangle,
   Loader2,
+  Globe,
+  CreditCard,
+  History,
+  User,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { cn, formatDate } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
-const clients = [
+const INITIAL_CLIENTS = [
   {
     id: "1",
     name: "Acme Corporation",
@@ -137,9 +161,22 @@ const statusStyles = {
 };
 
 export default function ClientsPage() {
+  const { formatCurrency } = useCurrency();
+  const [clients, setClients] = useState(INITIAL_CLIENTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Action States
+  const [selectedClient, setSelectedClient] = useState<(typeof INITIAL_CLIENTS)[0] | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+
+  const handleDeleteClient = () => {
+    if (!clientToDelete) return;
+    setClients((prev) => prev.filter((c) => c.id !== clientToDelete));
+    toast.success("Client data purged successfully.");
+    setClientToDelete(null);
+  };
 
   const filteredClients = clients.filter(
     (client) =>
@@ -314,20 +351,25 @@ export default function ClientsPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedClient(client)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                    <DropdownMenuItem asChild>
+                       <Link href={`/dashboard/clients/${client.id}/edit`}>
+                         <Edit className="h-4 w-4 mr-2" />
+                         Edit
+                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <FileText className="h-4 w-4 mr-2" />
                       Create Invoice
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem 
+                      className="text-destructive font-bold"
+                      onClick={() => setClientToDelete(client.id)}
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </DropdownMenuItem>
@@ -356,13 +398,13 @@ export default function ClientsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Total Invoiced</p>
                     <p className="font-semibold">
-                      ${client.totalInvoiced.toLocaleString()}
+                      {formatCurrency(client.totalInvoiced)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground">Outstanding</p>
                     <p className="font-semibold text-yellow-600">
-                      ${(client.totalInvoiced - client.totalPaid).toLocaleString()}
+                      {formatCurrency(client.totalInvoiced - client.totalPaid)}
                     </p>
                   </div>
                 </div>
@@ -386,6 +428,140 @@ export default function ClientsPage() {
           </Card>
         ))}
       </div>
+      {/* Detail View Modal: Center Pop-out */}
+      <Dialog open={!!selectedClient} onOpenChange={(open) => !open && setSelectedClient(null)}>
+        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
+          <DialogHeader className="bg-primary p-8 text-primary-foreground">
+            <div className="flex items-center gap-6">
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary-foreground text-primary text-3xl font-black shadow-lg">
+                {selectedClient?.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </div>
+              <div className="space-y-1 text-left">
+                <DialogTitle className="text-2xl font-black">{selectedClient?.name}</DialogTitle>
+                <DialogDescription className="font-bold text-primary-foreground/80 flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  {selectedClient?.company}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {selectedClient && (
+            <div className="p-8 space-y-10 font-geist max-h-[70vh] overflow-y-auto">
+              {/* Financial Vitality */}
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="p-6 bg-emerald-50/50 border border-emerald-100 rounded-3xl text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Lifetime Revenue</p>
+                    <p className="text-2xl font-black text-emerald-700">{formatCurrency(selectedClient.totalPaid)}</p>
+                 </div>
+                 <div className="p-6 bg-amber-50/50 border border-amber-100 rounded-3xl text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Active Debt</p>
+                    <p className="text-2xl font-black text-amber-700">{formatCurrency(selectedClient.totalInvoiced - selectedClient.totalPaid)}</p>
+                 </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <User className="h-3 w-3" />
+                    Account details
+                 </p>
+                 <div className="grid gap-3">
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/20 border border-border/50 transition-colors hover:bg-muted/30">
+                       <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center border shadow-sm text-muted-foreground">
+                          <Mail className="h-5 w-5" />
+                       </div>
+                       <div className="flex-1 overflow-hidden text-left">
+                          <p className="text-[10px] font-black text-muted-foreground uppercase">Email Address</p>
+                          <p className="font-bold text-sm truncate">{selectedClient.email}</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/20 border border-border/50 transition-colors hover:bg-muted/30">
+                       <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center border shadow-sm text-muted-foreground">
+                          <Phone className="h-5 w-5" />
+                       </div>
+                       <div className="flex-1 overflow-hidden text-left">
+                          <p className="text-[10px] font-black text-muted-foreground uppercase">Direct Line</p>
+                          <p className="font-bold text-sm">{selectedClient.phone}</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Physical Presence */}
+              <div className="space-y-4">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <MapPin className="h-3 w-3" />
+                    Billing HQ
+                 </p>
+                 <div className="p-5 rounded-3xl bg-muted/10 border border-dashed border-border/60 text-sm italic text-muted-foreground flex gap-4 text-left">
+                    <Globe className="h-5 w-5 text-primary shrink-0" />
+                    {selectedClient.address}
+                 </div>
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="space-y-4">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <History className="h-3 w-3" />
+                    Engagement Metrics
+                 </p>
+                 <div className="grid grid-cols-3 gap-3">
+                    <div className="p-4 rounded-2xl border text-center">
+                       <p className="text-[10px] text-muted-foreground uppercase font-black">Invoices</p>
+                       <p className="text-xl font-black">{selectedClient.invoiceCount}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl border text-center">
+                       <p className="text-[10px] text-muted-foreground uppercase font-black">Status</p>
+                       <p className="text-xs font-black uppercase text-emerald-600">{selectedClient.status}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl border text-center">
+                       <p className="text-[10px] text-muted-foreground uppercase font-black">Tier</p>
+                       <p className="text-xs font-black uppercase">Enterprise</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 pb-8">
+                 <Button className="flex-1 font-bold h-12 rounded-2xl shadow-lg shadow-primary/20">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Create New Invoice
+                 </Button>
+                 <Button variant="outline" className="flex-1 font-bold h-12 rounded-2xl border-border bg-background hover:bg-muted" asChild>
+                    <Link href={`/dashboard/clients/${selectedClient.id}/edit`}>
+                       Edit Profile
+                    </Link>
+                 </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. You are about to permanently delete
+              <span className="font-bold text-foreground mx-1">
+              {clients.find(c => c.id === clientToDelete)?.name}
+              </span>
+              and all associated record history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteClient}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm Deletion
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

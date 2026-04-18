@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,6 @@ import {
   Download,
   DollarSign,
   TrendingDown,
-  Receipt,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -63,10 +63,27 @@ import {
   Users,
   Package,
   Loader2,
+  AlertTriangle,
+  CheckCircle,
+  MapPin,
+  Receipt,
+  History
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn, formatDate } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { toast } from "sonner";
 
-const expenses = [
+const INITIAL_EXPENSES = [
   {
     id: "EXP-001",
     description: "Office Supplies",
@@ -154,10 +171,23 @@ const statusStyles = {
 };
 
 export default function ExpensesPage() {
+  const { formatCurrency } = useCurrency();
+  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // UI States
+  const [selectedExpense, setSelectedExpense] = useState<(typeof INITIAL_EXPENSES)[0] | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+
+  const handleDeleteExpense = () => {
+    if (!expenseToDelete) return;
+    setExpenses((prev) => prev.filter((e) => e.id !== expenseToDelete));
+    toast.success(`Expense ${expenseToDelete} has been deleted.`);
+    setExpenseToDelete(null);
+  };
 
   const filteredExpenses = expenses.filter((expense) => {
     const matchesSearch =
@@ -389,10 +419,10 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell>{expense.vendor}</TableCell>
                       <TableCell className="font-medium">
-                        ${expense.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        {formatCurrency(expense.amount)}
                       </TableCell>
                       <TableCell>
-                        {new Date(expense.date).toLocaleDateString()}
+                        {formatDate(expense.date)}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -412,20 +442,25 @@ export default function ExpensesPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSelectedExpense(expense)}>
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
+                            <DropdownMenuItem asChild>
+                               <Link href={`/dashboard/expenses/${expense.id}/edit`}>
+                                 <Edit className="h-4 w-4 mr-2" />
+                                 Edit
+                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Receipt className="h-4 w-4 mr-2" />
                               View Receipt
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem 
+                              className="text-destructive font-bold"
+                              onClick={() => setExpenseToDelete(expense.id)}
+                            >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
                             </DropdownMenuItem>
@@ -440,6 +475,146 @@ export default function ExpensesPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Detailed View Modal: Center Pop-out */}
+      <Dialog open={!!selectedExpense} onOpenChange={(open) => !open && setSelectedExpense(null)}>
+        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
+          <DialogHeader className="bg-primary p-8 text-primary-foreground">
+            <div className="flex justify-between items-start">
+              <div className="text-left">
+                <DialogTitle className="text-3xl font-black mb-1">Expense Voucher</DialogTitle>
+                <DialogDescription className="text-primary-foreground/80 font-medium">
+                  {selectedExpense?.id}
+                </DialogDescription>
+              </div>
+              <div className="text-right">
+                <div className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold bg-primary-foreground text-primary")}>
+                  {selectedExpense ? categoryConfig[selectedExpense.category as keyof typeof categoryConfig].label : ""}
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {selectedExpense && (
+            <div className="p-8 space-y-12 max-h-[70vh] overflow-y-auto font-geist">
+              {/* Core Details */}
+              <div className="flex flex-col items-center justify-center p-8 bg-muted/20 rounded-3xl border border-dashed text-center">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Total Expenditure</p>
+                 <h2 className="text-5xl font-black tracking-tighter text-primary">
+                    {formatCurrency(selectedExpense.amount)}
+                 </h2>
+                 <p className="mt-4 text-sm font-bold bg-muted px-4 py-1 rounded-full border">
+                   {selectedExpense.description}
+                 </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-12">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vendor Details</p>
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                      <Building className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold">{selectedExpense.vendor}</p>
+                      <p className="text-xs text-muted-foreground">Registered Entity</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4 text-right">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filing Info</p>
+                  <div className="space-y-1 text-sm">
+                    <p className="flex justify-between gap-4"><span className="text-muted-foreground">Transaction Date:</span> <span className="font-bold">{formatDate(selectedExpense.date)}</span></p>
+                    <div className="flex justify-end pt-2">
+                       <Badge variant="outline" className={cn("font-bold px-3 py-1", statusStyles[selectedExpense.status as keyof typeof statusStyles])}>
+                         {selectedExpense.status.toUpperCase()}
+                       </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Compliance & Receipt Section */}
+              <div className="space-y-6">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Receipt className="h-3 w-3" />
+                  Compliance Checklist
+                </p>
+                <div className="grid gap-3">
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-3 text-sm font-bold">
+                      <div className={cn("h-5 w-5 rounded-full flex items-center justify-center", selectedExpense.receipt ? "bg-emerald-500" : "bg-red-500")}>
+                        {selectedExpense.receipt ? <CheckCircle className="h-3 w-3 text-white" /> : <AlertTriangle className="h-3 w-3 text-white" />}
+                      </div>
+                      Tax Receipt Attached
+                    </div>
+                    {selectedExpense.receipt && <Button variant="link" className="text-xs font-black p-0 h-auto">VIEW PDF</Button>}
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-3 text-sm font-bold">
+                       <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3 text-white" />
+                       </div>
+                       Budget Code Verified
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10">
+                 <div className="flex items-center gap-2 mb-4">
+                    <History className="h-4 w-4 text-primary" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">Processing History</p>
+                 </div>
+                 <div className="space-y-6 pl-2 border-l-2 border-primary/20 text-left">
+                    <div className="relative pl-6">
+                       <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
+                       <p className="text-xs font-bold">Expense Filed</p>
+                       <p className="text-[10px] text-muted-foreground">{formatDate(selectedExpense.date)}</p>
+                    </div>
+                    {selectedExpense.status === 'approved' && (
+                      <div className="relative pl-6">
+                         <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-emerald-500 ring-4 ring-background" />
+                         <p className="text-xs font-bold">Manager Approval Confirmed</p>
+                         <p className="text-[10px] text-muted-foreground">Internal Audit Passed</p>
+                      </div>
+                    )}
+                 </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 pb-8">
+                 <Button className="flex-1 font-black h-12 rounded-2xl shadow-xl shadow-primary/20">
+                    Process Reimbursement
+                 </Button>
+                 <Button variant="outline" className="flex-1 font-black h-12 rounded-2xl border-border bg-background" asChild>
+                    <Link href={`/dashboard/expenses/${selectedExpense?.id}/edit`}>
+                       Edit Entry
+                    </Link>
+                 </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!expenseToDelete} onOpenChange={(open) => !open && setExpenseToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete expense record 
+              <span className="font-bold text-foreground mx-1">{expenseToDelete}</span>
+              and remove it from your balance sheet.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteExpense} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirm Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo, NavIcons } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Tooltip,
   TooltipContent,
@@ -12,21 +12,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChevronLeft, LogOut } from "lucide-react";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", Icon: NavIcons.Dashboard },
-  { name: "Invoices", href: "/dashboard/invoices", Icon: NavIcons.Invoices },
-  { name: "Clients", href: "/dashboard/clients", Icon: NavIcons.Clients },
-  { name: "Payments", href: "/dashboard/payments", Icon: NavIcons.Payments },
-  { name: "Expenses", href: "/dashboard/expenses", Icon: NavIcons.Expenses },
-  { name: "Recovery", href: "/dashboard/recovery", Icon: NavIcons.Recovery },
-  { name: "Reports", href: "/dashboard/reports", Icon: NavIcons.Reports },
-  { name: "AI Insights", href: "/dashboard/insights", Icon: NavIcons.AIInsights },
+  { name: "Dashboard", href: "/dashboard", Icon: NavIcons.Dashboard, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT"] },
+  { name: "Invoices", href: "/dashboard/invoices", Icon: NavIcons.Invoices, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "CLIENT"] },
+  { name: "Clients", href: "/dashboard/clients", Icon: NavIcons.Clients, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
+  { name: "Payments", href: "/dashboard/payments", Icon: NavIcons.Payments, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
+  { name: "Expenses", href: "/dashboard/expenses", Icon: NavIcons.Expenses, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
+  { name: "Recovery", href: "/dashboard/recovery", Icon: NavIcons.Recovery, roles: ["ADMIN", "MANAGER", "RECOVERY_AGENT"] },
+  { name: "Reports", href: "/dashboard/reports", Icon: NavIcons.Reports, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
+  { name: "Accounting", href: "/dashboard/accounting", Icon: NavIcons.Accounting, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
+  { name: "Staff Management", href: "/dashboard/admin/users", Icon: NavIcons.Users, roles: ["ADMIN"] },
+  { name: "AI Insights", href: "/dashboard/insights", Icon: NavIcons.AIInsights, roles: ["ADMIN", "MANAGER"] },
+  { name: "Marketplace", href: "/dashboard/help", Icon: NavIcons.Help, roles: ["CLIENT"] },
 ];
 
 const secondaryNavigation = [
-  { name: "Settings", href: "/dashboard/settings", Icon: NavIcons.Settings },
-  { name: "Help & Support", href: "/dashboard/help", Icon: NavIcons.Help },
+  { name: "Settings", href: "/dashboard/settings", Icon: NavIcons.Settings, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT"] },
+  { name: "Help & Support", href: "/dashboard/help", Icon: NavIcons.Help, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT"] },
 ];
 
 interface SidebarProps {
@@ -37,13 +41,19 @@ interface SidebarProps {
 export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   const handleSignOut = () => {
-    // Clear any potential auth tokens (for future integration)
-    localStorage.removeItem("token");
-    // Redirect to login
-    router.push("/login");
+    logout();
   };
+
+  const filteredNavigation = navigation.filter(item => 
+    !item.roles || (user?.role && item.roles.includes(user.role))
+  );
+
+  const filteredSecondaryNavigation = secondaryNavigation.filter(item => 
+    !item.roles || (user?.role && item.roles.includes(user.role))
+  );
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -78,9 +88,8 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
             </Button>
           </div>
 
-          {/* Main navigation */}
           <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
 
@@ -116,9 +125,8 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
             })}
           </nav>
 
-          {/* Secondary navigation */}
           <div className="border-t border-border px-2 py-4 space-y-1">
-            {secondaryNavigation.map((item) => {
+            {filteredSecondaryNavigation.map((item) => {
               const isActive = pathname === item.href;
 
               const linkContent = (
