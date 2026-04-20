@@ -11,12 +11,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -40,11 +36,16 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/recovery/**").hasAnyRole("RECOVERY_AGENT", "MANAGER", "ADMIN")
-                        .requestMatchers("/api/v1/analytics/**").hasAnyRole("ACCOUNTANT", "MANAGER", "ADMIN")
-                        .requestMatchers("/api/v1/assistant/**").hasAnyRole("MANAGER", "ADMIN")
-                        .requestMatchers("/ws/**").permitAll() // WebSockets
+                        .requestMatchers("/api/v1/clients/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/payments/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/invoices/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "CLIENT", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/recovery/**").hasAnyRole("ADMIN", "MANAGER", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/marketplace/**").hasRole("CLIENT")
+                        .requestMatchers("/api/v1/analytics/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+                        .requestMatchers("/api/v1/assistant/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT")
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -16,9 +16,9 @@ import { useAuth, UserRole } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", Icon: NavIcons.Dashboard, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT"] },
-  { name: "Invoices", href: "/dashboard/invoices", Icon: NavIcons.Invoices, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "CLIENT"] },
-  { name: "Clients", href: "/dashboard/clients", Icon: NavIcons.Clients, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
-  { name: "Payments", href: "/dashboard/payments", Icon: NavIcons.Payments, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
+  { name: "Invoices", href: "/dashboard/invoices", Icon: NavIcons.Invoices, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "CLIENT", "RECOVERY_AGENT"] },
+  { name: "Clients", href: "/dashboard/clients", Icon: NavIcons.Clients, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT"] },
+  { name: "Payments", href: "/dashboard/payments", Icon: NavIcons.Payments, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT"] },
   { name: "Expenses", href: "/dashboard/expenses", Icon: NavIcons.Expenses, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },
   { name: "Recovery", href: "/dashboard/recovery", Icon: NavIcons.Recovery, roles: ["ADMIN", "MANAGER", "RECOVERY_AGENT"] },
   { name: "Reports", href: "/dashboard/reports", Icon: NavIcons.Reports, roles: ["ADMIN", "MANAGER", "ACCOUNTANT"] },

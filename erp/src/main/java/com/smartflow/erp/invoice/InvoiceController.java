@@ -16,7 +16,10 @@ public class InvoiceController {
     private final ToneAdaptiveNotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<List<Invoice>> getAllInvoices() {
+    public ResponseEntity<List<Invoice>> getAllInvoices(@org.springframework.security.core.annotation.AuthenticationPrincipal com.smartflow.erp.auth.User user) {
+        if (user.getRole() == com.smartflow.erp.auth.User.Role.CLIENT) {
+            return ResponseEntity.ok(invoiceRepository.findByClientId(user.getClientId()));
+        }
         return ResponseEntity.ok(invoiceRepository.findAll());
     }
 

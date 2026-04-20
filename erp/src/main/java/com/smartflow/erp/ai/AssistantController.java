@@ -19,9 +19,9 @@ public class AssistantController {
     private final AIClient aiClient;
 
     @GetMapping("/insights")
-    public ResponseEntity<List<Map<String, Object>>> getTopInsights() {
+    public ResponseEntity<List<Map<String, Object>>> getTopInsights(@org.springframework.security.core.annotation.AuthenticationPrincipal com.smartflow.erp.auth.User user) {
         try {
-            return ResponseEntity.ok(aiClient.getInsights());
+            return ResponseEntity.ok(aiClient.getInsights(user.getRole().name()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

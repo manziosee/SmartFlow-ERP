@@ -40,6 +40,13 @@ public class RecoveryService {
     }
 
     @Transactional
+    public RecoveryCase createCase(Long invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+        return createCase(invoice);
+    }
+
+    @Transactional
     public RecoveryCase createCase(Invoice invoice) {
         // Calculate risk score using the FastAPI AI microservice
         Double riskFactor = aiClient.getInvoiceRisk(invoice);
