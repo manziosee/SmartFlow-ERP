@@ -1,0 +1,402 @@
+{
+	"info": {
+		"_postman_id": "smartflow-erp-collection-id",
+		"name": "SmartFlow ERP",
+		"description": "Comprehensive collection for SmartFlow ERP APIs across Java, Python, and Clojure.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin@smartflow.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{java_url}}/api/v1/auth/login",
+							"host": [
+								"{{java_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newuser@smartflow.com\",\n    \"password\": \"password123\",\n    \"role\": \"CLIENT\",\n    \"fullName\": \"New Client\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{java_url}}/api/v1/auth/register",
+							"host": [
+								"{{java_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Core Entities",
+			"item": [
+				{
+					"name": "Invoices",
+					"item": [
+						{
+							"name": "Get All Invoices",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{java_url}}/api/v1/invoices",
+									"host": [
+										"{{java_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"invoices"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Clients",
+					"item": [
+						{
+							"name": "Get All Clients",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{java_url}}/api/v1/clients",
+									"host": [
+										"{{java_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"clients"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Payments",
+					"item": [
+						{
+							"name": "Submit Payment",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"invoiceId\": 101,\n    \"amount\": 500.0,\n    \"paymentMethod\": \"bank_transfer\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{java_url}}/api/v1/payments",
+									"host": [
+										"{{java_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"payments"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "AI & Insights",
+			"item": [
+				{
+					"name": "Get Role-Aware Insights",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ai_url}}/api/v1/ai/insights?role=MANAGER",
+							"host": [
+								"{{ai_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"insights"
+							],
+							"query": [
+								{
+									"key": "role",
+									"value": "MANAGER"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Analyze Invoice Risk",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ai_url}}/api/v1/ai/risk/INV-001?amount=5000&days_overdue=10&client_risk_index=5",
+							"host": [
+								"{{ai_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"risk",
+								"INV-001"
+							],
+							"query": [
+								{
+									"key": "amount",
+									"value": "5000"
+								},
+								{
+									"key": "days_overdue",
+									"value": "10"
+								},
+								{
+									"key": "client_risk_index",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Peer Comparison Benchmarking",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ai_url}}/api/v1/ai/peer-comparison?client_id=1",
+							"host": [
+								"{{ai_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"peer-comparison"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Rules Engine",
+			"item": [
+				{
+					"name": "Calculate Settlement Allocation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payment_amount\": 1000.0,\n    \"invoices\": [\n        {\"id\": \"INV-1\", \"amount\": 400.0, \"dueDate\": \"2024-01-01\"},\n        {\"id\": \"INV-2\", \"amount\": 800.0, \"dueDate\": \"2024-02-01\"}\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{rules_url}}/api/v1/rules/allocate",
+							"host": [
+								"{{rules_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"rules",
+								"allocate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Recovery",
+			"item": [
+				{
+					"name": "Get My Active Recovery Cases",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{java_url}}/api/v1/recovery",
+							"host": [
+								"{{java_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"recovery"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Initiate Recovery Case",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{java_url}}/api/v1/recovery/101/initiate",
+							"host": [
+								"{{java_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"recovery",
+								"101",
+								"initiate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "java_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "ai_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "rules_url",
+			"value": "http://localhost:8001",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "your_token_here",
+			"type": "string"
+		}
+	]
+}

@@ -27,6 +27,7 @@ public class Client {
     private String contactPerson;
     private String contactEmail;
     private String contactPhone;
+    private String industry; // e.g. RETAIL, SERVICES
 
     // Financial Aggregates & AI ML scoring
     @Builder.Default

@@ -1,0 +1,67 @@
+package com.smartflow.erp.client;
+
+import com.smartflow.erp.auth.User;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/clients")
+@RequiredArgsConstructor
+public class ClientController {
+
+    private final ClientRepository clientRepository;
+
+    @GetMapping
+    public ResponseEntity<List<Client>> getClients(@AuthenticationPrincipal User user) {
+        // ADMIN, MANAGER, ACCOUNTANT see all
+        if (user.getRole() != User.Role.CLIENT) {
+            return ResponseEntity.ok(clientRepository.findAll());
+        }
+        
+        // CLIENT only sees their own profile
+        if (user.getClientId() != null) {
+            return clientRepository.findById(user.getClientId())
+                    .map(client -> ResponseEntity.ok(List.of(client)))
+                    .orElse(ResponseEntity.ok(List.of()));
+        }
+        
+        return ResponseEntity.ok(List.of());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Client> getClientById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        // Enforce data isolation for CLIENT role
+        if (user.getRole() == User.Role.CLIENT && !id.equals(user.getClientId())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        return clientRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<Client> createClient(@RequestBody Client client) {
+        return ResponseEntity.ok(clientRepository.save(client));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Client> updateClient(@PathVariable Long id, @RequestBody Client clientDetails, @AuthenticationPrincipal User user) {
+        // Enforce data isolation for CLIENT role
+        if (user.getRole() == User.Role.CLIENT && !id.equals(user.getClientId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return clientRepository.findById(id).map(client -> {
+            client.setName(clientDetails.getName());
+            client.setContactPerson(clientDetails.getContactPerson());
+            client.setContactEmail(clientDetails.getContactEmail());
+            client.setContactPhone(clientDetails.getContactPhone());
+            return ResponseEntity.ok(clientRepository.save(client));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+}

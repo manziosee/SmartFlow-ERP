@@ -1,10 +1,9 @@
 fastapi
 uvicorn
-pydantic
 sqlalchemy
-psycopg2-binary
-scikit-learn
 pandas
+pydantic
+python-multipart
+psycopg2-binary
+passlib[bcrypt]
 python-jose[cryptography]
-python-dotenv
-cors
