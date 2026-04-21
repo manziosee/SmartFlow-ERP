@@ -2,12 +2,20 @@ spring:
   application:
     name: "smartflow-erp"
   
+  # Primary Database (Neon)
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:smartflow_erp}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DB_URL:jdbc:postgresql://ep-flat-rain-a4n7febx-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require}
+    username: ${DB_USER:neondb_owner}
+    password: ${DB_PASSWORD:npg_xlMSFzL3THY8}
     driver-class-name: org.postgresql.Driver
   
+  # Secondary Database (Turso / Backup)
+  secondary:
+    datasource:
+      url: ${SECONDARY_DB_URL:jdbc:libsql://smartflow-erp-oseemanzi.aws-us-east-1.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY4MDA4NTcsImlkIjoiMDE5ZGIxOGUtY2YwMS03Yjc1LTliMDgtNTU4MDcxN2E4YjMyIiwicmlkIjoiODdkN2ZmMGYtODU0MS00MzRmLWFmOTYtNDRlYjBlODFlNTdmIn0.GTNf17aj4qBa_Ww2TrL3XDrBgLs30L2Z0Puj0naFVToI3YtxIZU8HndSBOOrIy_Lg9yeLZtOFGHrtlzyv2AKCA}
+      token: ${TURSO_TOKEN:eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzY4MDA4NTcsImlkIjoiMDE5ZGIxOGUtY2YwMS03Yjc1LTliMDgtNTU4MDcxN2E4YjMyIiwicmlkIjoiODdkN2ZmMGYtODU0MS00MzRmLWFmOTYtNDRlYjBlODFlNTdmIn0.GTNf17aj4qBa_Ww2TrL3XDrBgLs30L2Z0Puj0naFVToI3YtxIZU8HndSBOOrIy_Lg9yeLZtOFGHrtlzyv2AKCA}
+      driver-class-name: org.libsql.jdbc.LibsqlDriver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,6 +24,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Sentry Configuration
+sentry:
+  dsn: https://abe18835734883b628093bdff0bd20b9@o4511258416447488.ingest.de.sentry.io/4511259731099728
+  send-default-pii: true
 
 server:
   port: 8080

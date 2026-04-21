@@ -87,10 +87,46 @@
      :headers {"Content-Type" "application/json"}
      :body (json/generate-string recs)}))
 
+(defn match-reconciliation
+  "Rule: Match a bank statement entry to an invoice based on amount (strict) and reference (fuzzy)"
+  [entry invoices]
+  (let [amount (:amount entry)
+        ref (:reference entry)]
+    (filter (fn [inv] 
+              (and (== (:amount inv) amount)
+                   (or (.contains (.toLowerCase (:reference inv)) (.toLowerCase ref))
+                       (.contains (.toLowerCase ref) (.toLowerCase (:reference inv))))))
+            invoices)))
+
+(defn calculate-late-fees
+  "Rule: 5% late fee if > 30 days overdue, 10% if > 60 days"
+  [invoice]
+  (let [days (:days_overdue invoice)]
+    (cond
+      (> days 60) (* (:amount invoice) 0.10)
+      (> days 30) (* (:amount invoice) 0.05)
+      :else 0)))
+
+(defn handle-reconcile [request]
+  (let [body (json/parse-string (slurp (:body request)) true)
+        matches (match-reconciliation (:entry body) (:invoices body))]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/generate-string matches)}))
+
+(defn handle-late-fees [request]
+  (let [invoice (json/parse-string (slurp (:body request)) true)
+        fee (calculate-late-fees invoice)]
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body (json/generate-string {:late_fee fee})}))
+
 (defroutes app-routes
   (GET "/" [] (json/generate-string {:status "SmartFlow Rules Engine is running"}))
   (POST "/api/v1/rules/allocate" [] handle-allocation)
   (POST "/api/v1/rules/marketplace" [] handle-marketplace)
+  (POST "/api/v1/rules/reconcile" [] handle-reconcile)
+  (POST "/api/v1/rules/late-fees" [] handle-late-fees)
   (route/not-found "Not Found"))
 
 ;; --- Entry Point ---
