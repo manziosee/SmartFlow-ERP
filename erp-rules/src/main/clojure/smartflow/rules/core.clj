@@ -1,5 +1,5 @@
 (ns smartflow.rules.core
-  (:require [compojure.core :refer [defroutes POST GET]]
+  (:require [compojure.core :refer [defroutes POST GET ANY]]
             [compojure.route :as route]
             [ring.adapter.jetty :refer [run-jetty]]
             [cheshire.core :as json]
@@ -9,7 +9,7 @@
   (:gen-class))
 
 ;; --- Constants ---
-(def python-api-url "http://localhost:8000/api/v1/ai")
+(def python-api-url (or (System/getenv "AI_SERVICE_URL") "http://localhost:8000/api/v1/ai"))
 
 ;; --- Business Logic (The functional part) ---
 
@@ -123,6 +123,7 @@
 
 (defroutes app-routes
   (GET "/" [] (json/generate-string {:status "SmartFlow Rules Engine is running"}))
+  (ANY "/health" [] {:status 200 :headers {"Content-Type" "application/json"} :body (json/generate-string {:status "UP" :service "smartflow-erp-rules"})})
   (POST "/api/v1/rules/allocate" [] handle-allocation)
   (POST "/api/v1/rules/marketplace" [] handle-marketplace)
   (POST "/api/v1/rules/reconcile" [] handle-reconcile)
@@ -134,4 +135,4 @@
 (defn -main [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "8001"))]
     (println "Starting SmartFlow Rules Engine on port" port "...")
-    (run-jetty app-routes {:port port :join? false})))
+    (run-jetty app-routes {:port port :host "0.0.0.0" :join? false})))
