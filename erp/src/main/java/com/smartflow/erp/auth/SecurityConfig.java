@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/debug/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/clients/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
                         .requestMatchers("/api/v1/payments/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
@@ -47,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/analytics/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
                         .requestMatchers("/api/v1/assistant/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT")
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/health", "/").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -79,6 +79,11 @@ def calculate_risk(amount: float, days_overdue: int, client_risk_index: int) -> 
 async def root():
     return {"message": "SmartFlow AI Service is running", "docs": "/docs"}
 
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health_check():
+    return {"status": "UP", "service": "smartflow-erp-ai"}
+
+
 @app.get("/api/v1/ai/insights", response_model=List[Insight])
 async def get_insights(role: str = "MANAGER"):
     """
