@@ -12,23 +12,23 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { month: "Jan", revenue: 12400, expenses: 8200 },
-  { month: "Feb", revenue: 15600, expenses: 9100 },
-  { month: "Mar", revenue: 11200, expenses: 7800 },
-  { month: "Apr", revenue: 18500, expenses: 10200 },
-  { month: "May", revenue: 22100, expenses: 11500 },
-  { month: "Jun", revenue: 19800, expenses: 10800 },
-  { month: "Jul", revenue: 24500, expenses: 12100 },
-  { month: "Aug", revenue: 21300, expenses: 11200 },
-  { month: "Sep", revenue: 26800, expenses: 13500 },
-  { month: "Oct", revenue: 29200, expenses: 14200 },
-  { month: "Nov", revenue: 31500, expenses: 15100 },
-  { month: "Dec", revenue: 34200, expenses: 16400 },
-];
+import { analyticsApi } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export function RevenueChart() {
   const { formatCurrency } = useCurrency();
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    analyticsApi.getCashflow().then(cashflow => {
+      setData(cashflow.map(c => ({
+        month: c.period,
+        revenue: c.inflow,
+        expenses: c.outflow
+      })));
+    }).catch(console.error);
+  }, []);
+
 
   return (
     <Card className="col-span-4">

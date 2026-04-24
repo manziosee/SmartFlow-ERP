@@ -42,11 +42,7 @@ interface LineItem {
   rate: number;
 }
 
-const clients = [
-  { id: "1", name: "Acme Corporation", email: "billing@acme.com" },
-  { id: "2", name: "Tech Solutions Inc.", email: "accounts@techsolutions.com" },
-  { id: "3", name: "Global Dynamics", email: "finance@globaldynamics.com" },
-];
+import { clientsApi, invoicesApi } from "@/lib/api";
 
 const currencies = [
   { code: "RWF", symbol: "FRw", name: "Rwandan Franc", rate: 1 },
@@ -58,6 +54,7 @@ export default function EditInvoicePage() {
   const params = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
   
   const [currency, setCurrency] = useState("RWF");
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -70,25 +67,37 @@ export default function EditInvoicePage() {
     taxRate: 18,
   });
 
-  // Simulate fetching invoice data
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setFormData({
-        clientId: "1",
-        invoiceNumber: params.id as string || "INV-882",
-        issueDate: "2024-03-01",
-        dueDate: "2024-03-15",
-        notes: "Revised for consulting services Q1",
-        taxRate: 18,
-      });
-      setLineItems([
-        { id: 1, description: "Professional Consulting - Backend", quantity: 40, rate: 25000 },
-        { id: 2, description: "Software Architecture Design", quantity: 1, rate: 120000 },
-      ]);
-      setCurrency("RWF");
-      setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    async function loadData() {
+      try {
+        const id = Array.isArray(params.id) ? params.id[0] : params.id;
+        const [clientsData, invoiceData] = await Promise.all([
+          clientsApi.getAll(),
+          id ? invoicesApi.getById(id) : Promise.resolve(null)
+        ]);
+        
+        setClients(clientsData);
+
+        if (invoiceData) {
+          setFormData({
+            clientId: invoiceData.client?.id?.toString() || "",
+            invoiceNumber: invoiceData.id?.toString() || id?.toString() || "",
+            issueDate: invoiceData.issueDate || "",
+            dueDate: invoiceData.dueDate || "",
+            notes: invoiceData.notes || "",
+            taxRate: 18,
+          });
+          setLineItems(invoiceData.items || [
+            { id: 1, description: "Professional Consulting", quantity: 1, rate: invoiceData.amount || 0 }
+          ]);
+        }
+      } catch (err) {
+        console.error("Failed to load invoice data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
   }, [params.id]);
 
   const subtotal = lineItems.reduce((acc, item) => acc + item.quantity * item.rate, 0);
@@ -158,8 +167,8 @@ export default function EditInvoicePage() {
                        <SelectTrigger className="h-12 rounded-2xl border-border/50 bg-muted/20">
                           <SelectValue placeholder="Select client" />
                        </SelectTrigger>
-                       <SelectContent>
-                          {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        <SelectContent>
+                          {clients.map((c: any) => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
                        </SelectContent>
                     </Select>
                   </div>

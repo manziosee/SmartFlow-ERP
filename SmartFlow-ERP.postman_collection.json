@@ -12,7 +12,7 @@
 				{
 					"name": "Auth - Register",
 					"request": {
-						"method": "POST",
+						"method": "POST",r
 						"header": [],
 						"body": {
 							"mode": "raw",

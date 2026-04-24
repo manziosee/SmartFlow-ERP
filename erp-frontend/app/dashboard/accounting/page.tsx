@@ -43,18 +43,50 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
-const taxRecords = [
-  { id: "TX-9021", type: "Output", amount: 1250000, vat: 225000, date: "2024-03-15", entity: "Global Dynamics" },
-  { id: "TX-9022", type: "Output", amount: 800000, vat: 144000, date: "2024-03-12", entity: "Tech Solutions" },
-  { id: "TX-EXP-44", type: "Input", amount: 150000, vat: 27000, date: "2024-03-10", entity: "Office Supplies" },
-  { id: "TX-9023", type: "Output", amount: 2100000, vat: 378000, date: "2024-03-05", entity: "Acme Corp" },
-  { id: "TX-EXP-45", type: "Input", amount: 50000, vat: 9000, date: "2024-03-01", entity: "ISP Rwanda" },
-];
+import { expensesApi, invoicesApi } from "@/lib/api";
+import { useEffect, useState } from "react";
+
 
 export default function AccountingPage() {
   const router = useRouter();
   const { formatCurrency } = useCurrency();
   const [period, setPeriod] = useState("Q1-2024");
+  const [taxRecords, setTaxRecords] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [expenses, invoices] = await Promise.all([
+          expensesApi.getAll(),
+          invoicesApi.getAll()
+        ]);
+        
+        const inputRecords = expenses.map((e: any) => ({
+          id: `TX-EXP-${e.id}`,
+          type: "Input",
+          amount: e.amount,
+          vat: e.amount * 0.18,
+          date: e.date,
+          entity: e.description
+        }));
+        
+        const outputRecords = invoices.map((i: any) => ({
+          id: `TX-INV-${i.id}`,
+          type: "Output",
+          amount: i.amount,
+          vat: i.amount * 0.18,
+          date: i.issueDate,
+          entity: i.client?.name || "Unknown"
+        }));
+        
+        const combined = [...inputRecords, ...outputRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTaxRecords(combined);
+      } catch (err) {
+        console.error("Failed to load tax records", err);
+      }
+    }
+    loadData();
+  }, []);
 
   const totals = {
     outputTax: taxRecords.filter(r => r.type === 'Output').reduce((acc, r) => acc + r.vat, 0),

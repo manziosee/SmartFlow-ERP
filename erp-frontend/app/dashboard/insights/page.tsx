@@ -33,78 +33,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const insights = [
-  {
-    id: 1,
-    type: "risk",
-    priority: "high",
-    title: "High-Risk Payment: Global Dynamics",
-    description:
-      "Based on payment history analysis, Invoice #INV-003 from Global Dynamics has a 78% probability of becoming a bad debt. The client has shown a pattern of late payments over the last 6 months.",
-    action: "Send a personalized follow-up email and consider offering a payment plan.",
-    impact: "$6,200 at risk",
-    created: "2 hours ago",
-    status: "active",
-    probability: 78,
-    actions: ["Send Email", "Call Client", "Create Payment Plan"],
-  },
-  {
-    id: 2,
-    type: "opportunity",
-    priority: "medium",
-    title: "Optimal Invoicing Time Detected",
-    description:
-      "Analysis of your payment data shows that invoices sent on Tuesday mornings have 23% faster payment rates. Consider scheduling invoice delivery for Tuesdays between 9-11 AM.",
-    action: "Update your invoicing schedule to leverage this pattern.",
-    impact: "Improve cash flow by 15%",
-    created: "1 day ago",
-    status: "active",
-    probability: 85,
-    actions: ["Update Schedule", "View Analysis"],
-  },
-  {
-    id: 3,
-    type: "prediction",
-    priority: "medium",
-    title: "Cash Flow Forecast: February",
-    description:
-      "Based on historical patterns and pending invoices, your February cash flow is projected to be $42,500 with a confidence level of 85%. This is 12% higher than January.",
-    action: "Review upcoming expenses to optimize allocation.",
-    impact: "+$5,100 vs forecast",
-    created: "3 days ago",
-    status: "active",
-    probability: 85,
-    actions: ["View Forecast", "Export Report"],
-  },
-  {
-    id: 4,
-    type: "alert",
-    priority: "high",
-    title: "Unusual Expense Pattern Detected",
-    description:
-      "Software subscription expenses have increased by 45% compared to last quarter. Review your subscriptions for potential redundancies or unused services.",
-    action: "Audit current software subscriptions.",
-    impact: "Potential savings: $890/month",
-    created: "1 day ago",
-    status: "active",
-    probability: 92,
-    actions: ["View Subscriptions", "Start Audit"],
-  },
-  {
-    id: 5,
-    type: "recommendation",
-    priority: "low",
-    title: "Client Relationship Opportunity",
-    description:
-      "Acme Corporation has been consistently paying early and has increased order volume by 30%. Consider offering them preferential payment terms or a loyalty discount.",
-    action: "Schedule a relationship meeting with Acme Corp.",
-    impact: "Strengthen top client relationship",
-    created: "5 days ago",
-    status: "dismissed",
-    probability: 95,
-    actions: ["Schedule Meeting", "Send Offer"],
-  },
-];
+import { aiApi } from "@/lib/api";
+import { useEffect } from "react";
+
 
 const typeConfig = {
   risk: {
@@ -152,6 +83,33 @@ const typeConfig = {
 export default function AIInsightsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
+  const [insights, setInsights] = useState<any[]>([]);
+
+  const loadInsights = async () => {
+    try {
+      setRefreshing(true);
+      const data = await aiApi.getInsights();
+      setInsights(data.map((i: any, index: number) => ({
+        ...i,
+        id: index + 1,
+        status: "active",
+        priority: i.priority?.toLowerCase() || "medium",
+        type: i.type?.toLowerCase() || "recommendation",
+        impact: i.impact || "General Impact",
+        created: "Just now",
+        action: i.action || "Review this insight",
+      })));
+    } catch (err) {
+      console.error("Failed to load insights", err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInsights();
+  }, []);
+
 
   const filteredInsights = insights.filter((insight) => {
     if (activeTab === "all") return insight.status === "active";
@@ -160,9 +118,7 @@ export default function AIInsightsPage() {
   });
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setRefreshing(false);
+    await loadInsights();
   };
 
   const stats = {
@@ -314,7 +270,8 @@ export default function AIInsightsPage() {
                 </div>
               ) : (
                 filteredInsights.map((insight) => {
-                  const type = typeConfig[insight.type as keyof typeof typeConfig];
+                  const typeKey = Object.keys(typeConfig).includes(insight.type) ? insight.type : 'recommendation';
+                  const type = typeConfig[typeKey as keyof typeof typeConfig];
                   const TypeIcon = type.icon;
                   return (
                     <div

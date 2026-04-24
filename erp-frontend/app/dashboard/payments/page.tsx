@@ -40,68 +40,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const payments = [
-  {
-    id: "PAY-001",
-    invoiceId: "INV-001",
-    client: "Acme Corporation",
-    amount: 4500.0,
-    method: "bank_transfer",
-    status: "completed",
-    date: "2024-01-14",
-    reference: "REF-AC-2024-001",
-  },
-  {
-    id: "PAY-002",
-    invoiceId: "INV-005",
-    client: "Digital Ventures",
-    amount: 3750.0,
-    method: "credit_card",
-    status: "completed",
-    date: "2024-01-11",
-    reference: "REF-DV-2024-001",
-  },
-  {
-    id: "PAY-003",
-    invoiceId: "INV-002",
-    client: "Tech Solutions Inc.",
-    amount: 1400.0,
-    method: "credit_card",
-    status: "completed",
-    date: "2024-01-10",
-    reference: "REF-TS-2024-001",
-  },
-  {
-    id: "PAY-004",
-    invoiceId: "INV-004",
-    client: "StartUp Labs",
-    amount: 1500.0,
-    method: "paypal",
-    status: "pending",
-    date: "2024-01-15",
-    reference: "REF-SL-2024-001",
-  },
-  {
-    id: "PAY-005",
-    invoiceId: "INV-006",
-    client: "Cloud Nine Systems",
-    amount: 4450.0,
-    method: "bank_transfer",
-    status: "completed",
-    date: "2024-01-12",
-    reference: "REF-CN-2024-001",
-  },
-  {
-    id: "PAY-006",
-    invoiceId: "INV-007",
-    client: "Nexus Innovations",
-    amount: 2800.0,
-    method: "credit_card",
-    status: "failed",
-    date: "2024-01-13",
-    reference: "REF-NI-2024-001",
-  },
-];
+import { paymentsApi } from "@/lib/api";
+import { useEffect } from "react";
+
 
 const statusConfig = {
   completed: {
@@ -128,14 +69,33 @@ const methodConfig = {
 };
 
 export default function PaymentsPage() {
+  const [payments, setPayments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadPayments = async () => {
+    try {
+      setIsLoading(true);
+      const data = await paymentsApi.getAll();
+      setPayments(data);
+    } catch (err) {
+      console.error("Failed to load payments", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPayments();
+  }, []);
+
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
-      payment.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.invoiceId.toLowerCase().includes(searchQuery.toLowerCase());
+      (payment.client || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (payment.id?.toString() || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (payment.invoice?.id?.toString() || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || payment.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -268,10 +228,10 @@ export default function PaymentsPage() {
                       <TableCell className="font-medium">{payment.id}</TableCell>
                       <TableCell>
                         <span className="text-primary hover:underline cursor-pointer">
-                          {payment.invoiceId}
+                          {payment.invoice?.id || 'N/A'}
                         </span>
                       </TableCell>
-                      <TableCell>{payment.client}</TableCell>
+                      <TableCell>{payment.invoice?.client?.name || payment.client || 'N/A'}</TableCell>
                       <TableCell className="font-medium">
                         ${payment.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                       </TableCell>
@@ -291,7 +251,7 @@ export default function PaymentsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(payment.date).toLocaleDateString()}
+                        {payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : 'N/A'}
                       </TableCell>
                     </TableRow>
                   );

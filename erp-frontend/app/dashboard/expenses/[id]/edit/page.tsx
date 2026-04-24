@@ -35,6 +35,8 @@ import {
   Paperclip
 } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { expensesApi } from "@/lib/api";
+
 
 const categories = [
   { value: "operations", label: "Operations" },
@@ -61,18 +63,28 @@ export default function EditExpensePage() {
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setFormData({
-        description: "Office Supplies - Stationeries",
-        category: "operations",
-        vendor: "Office Depot",
-        amount: 245.50,
-        date: "2024-03-20",
-        status: "approved",
-      });
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    async function loadData() {
+      try {
+        const id = Array.isArray(params.id) ? params.id[0] : params.id;
+        if (!id) return;
+        const data = await expensesApi.getById(id);
+        if (data) {
+          setFormData({
+            description: data.description || "",
+            category: data.category || "operations",
+            vendor: (data as any).vendor || "",
+            amount: data.amount || 0,
+            date: data.date || "",
+            status: data.status || "pending",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load expense", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
   }, [params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
