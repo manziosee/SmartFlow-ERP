@@ -35,6 +35,7 @@ import {
   Image as ImageIcon,
   File,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ interface LineItem {
   description: string;
   quantity: number;
   rate: number;
+  productId?: number;
 }
 
 interface Attachment {
@@ -52,7 +54,7 @@ interface Attachment {
   type: "pdf" | "image" | "other";
 }
 
-import { clientsApi, invoicesApi } from "@/lib/api";
+import { clientsApi, invoicesApi, inventoryApi, Product } from "@/lib/api";
 import { useEffect } from "react";
 
 
@@ -78,9 +80,23 @@ export default function NewInvoicePage() {
   const [submitAction, setSubmitAction] = useState<"draft" | "send" | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [clients, setClients] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     clientsApi.getAll().then(setClients).catch(console.error);
+    inventoryApi.getAll().then(setProducts).catch(console.error);
+    
+    // Generate dynamic values on client side to avoid hydration mismatch
+    const now = new Date();
+    const issueDate = now.toISOString().split("T")[0];
+    const dueDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    
+    setFormData(prev => ({
+      ...prev,
+      invoiceNumber: `INV-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`,
+      issueDate,
+      dueDate
+    }));
   }, []);
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: 1, description: "", quantity: 1, rate: 0 },
@@ -88,11 +104,9 @@ export default function NewInvoicePage() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [formData, setFormData] = useState({
     clientId: "",
-    invoiceNumber: `INV-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`,
-    issueDate: new Date().toISOString().split("T")[0],
-    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0],
+    invoiceNumber: "",
+    issueDate: "",
+    dueDate: "",
     paymentTerms: "net_14",
     notes: "",
     taxRate: 0,
@@ -156,13 +170,22 @@ export default function NewInvoicePage() {
 
   const handleSubmit = async (e: React.FormEvent, action: "draft" | "send") => {
     e.preventDefault();
+    setSubmitAction(action);
     setIsSubmitting(true);
     await invoicesApi.create({
+      invoiceNumber: formData.invoiceNumber,
       client: { id: parseInt(formData.clientId), name: "", email: "" },
       amount: total,
       status: action === "send" ? "pending" : "draft",
       issueDate: formData.issueDate,
       dueDate: formData.dueDate || formData.issueDate,
+      items: lineItems.map(item => ({
+        product: item.productId ? { id: item.productId } : null,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.rate,
+        totalPrice: item.quantity * item.rate
+      }))
     });
     setIsSubmitting(false);
     setSubmitAction(null);
@@ -336,7 +359,37 @@ export default function NewInvoicePage() {
               {/* Items */}
               {lineItems.map((item, index) => (
                 <div key={item.id} className="grid grid-cols-12 gap-4 items-center">
-                  <div className="col-span-5">
+                  <div className="col-span-5 flex gap-2">
+                    <Select
+                      value={item.productId?.toString() || "manual"}
+                      onValueChange={(val) => {
+                        if (val === "manual") {
+                          updateLineItem(item.id, "productId", 0);
+                        } else {
+                          const p = products.find(prod => prod.id.toString() === val);
+                          if (p) {
+                            setLineItems(lineItems.map(li => li.id === item.id ? {
+                              ...li,
+                              productId: p.id,
+                              description: `${p.sku} - ${p.name}`,
+                              rate: p.unitPrice
+                            } : li));
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Select Product" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Manual Entry</SelectItem>
+                        {products.map(p => (
+                          <SelectItem key={p.id} value={p.id.toString()}>
+                            {p.sku} - {p.name} ({p.stockQuantity} left)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       placeholder="Item description"
                       value={item.description}
@@ -590,6 +643,15 @@ export default function NewInvoicePage() {
                       Create & Send Invoice
                     </>
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                  onClick={() => window.print()}
+                  disabled={isSubmitting}
+                >
+                  <Download className="h-4 w-4" />
+                  Export to PDF / Print
                 </Button>
                 <Button
                   variant="outline"

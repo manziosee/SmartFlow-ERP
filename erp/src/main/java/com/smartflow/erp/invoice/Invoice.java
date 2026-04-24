@@ -26,8 +26,9 @@ public class Invoice {
     @Column(unique = true, nullable = false)
     private String invoiceNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Client client;
 
     @Column(nullable = false)
@@ -51,6 +52,10 @@ public class Invoice {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Status status = Status.PENDING;
+
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @Builder.Default
+    private java.util.List<InvoiceItem> items = new java.util.ArrayList<>();
 
     // AI/Notification logic
     @Builder.Default

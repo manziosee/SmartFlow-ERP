@@ -17,8 +17,8 @@ public class NotificationController {
 
     @GetMapping
     @Operation(summary = "Get current user notifications")
-    public List<Notification> getMyNotifications(@RequestParam Long userId) {
-        return notificationRepository.findByRecipient_IdOrderByCreatedAtDesc(userId);
+    public List<Notification> getMyNotifications(@org.springframework.security.core.annotation.AuthenticationPrincipal com.smartflow.erp.auth.User user) {
+        return notificationRepository.findByRecipient_IdOrderByCreatedAtDesc(user.getId());
     }
 
     @PatchMapping("/{id}/read")

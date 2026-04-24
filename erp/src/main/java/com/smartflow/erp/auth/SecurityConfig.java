@@ -36,17 +36,24 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/debug/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/clients/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
-                        .requestMatchers("/api/v1/payments/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
-                        .requestMatchers("/api/v1/invoices/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "CLIENT", "RECOVERY_AGENT")
-                        .requestMatchers("/api/v1/recovery/**").hasAnyRole("ADMIN", "MANAGER", "RECOVERY_AGENT")
-                        .requestMatchers("/api/v1/marketplace/**").hasRole("CLIENT")
-                        .requestMatchers("/api/v1/analytics/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
-                        .requestMatchers("/api/v1/assistant/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT")
+                        .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/backups", "/api/v1/backups/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/clients", "/api/v1/clients/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/payments", "/api/v1/payments/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/invoices", "/api/v1/invoices/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "CLIENT", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/recovery", "/api/v1/recovery/**").hasAnyRole("ADMIN", "MANAGER", "RECOVERY_AGENT")
+                        .requestMatchers("/api/v1/marketplace", "/api/v1/marketplace/**").hasRole("CLIENT")
+                        .requestMatchers("/api/v1/analytics", "/api/v1/analytics/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+                        .requestMatchers("/api/v1/expenses", "/api/v1/expenses/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+                        .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+                        .requestMatchers("/api/v1/assistant", "/api/v1/assistant/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT")
+                        .requestMatchers("/api/v1/vendors", "/api/v1/vendors/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+                        .requestMatchers("/api/v1/inventory", "/api/v1/inventory/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
+                        .requestMatchers("/api/v1/config", "/api/v1/config/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/health", "/").permitAll()
                         .anyRequest().authenticated()
@@ -81,7 +88,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://172.30.16.1:*",
+                "https://*.vercel.app"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

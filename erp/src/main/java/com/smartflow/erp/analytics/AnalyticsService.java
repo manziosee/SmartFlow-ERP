@@ -47,12 +47,13 @@ public class AnalyticsService {
     /**
      * Forecasts cashflow for the next 30 days based on due dates
      */
-    public Map<LocalDate, BigDecimal> getCashflowForecast() {
+    public Map<String, BigDecimal> getCashflowForecast() {
         List<Invoice> pendingInvoices = invoiceRepository.findByStatus(Invoice.Status.PENDING);
         
         return pendingInvoices.stream()
+                .filter(i -> i.getDueDate() != null)
                 .collect(Collectors.groupingBy(
-                        Invoice::getDueDate,
+                        i -> i.getDueDate().toString(),
                         Collectors.reducing(BigDecimal.ZERO, Invoice::getAmount, BigDecimal::add)
                 ));
     }

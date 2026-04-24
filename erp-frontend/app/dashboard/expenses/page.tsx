@@ -366,7 +366,7 @@ export default function ExpensesPage() {
               </TableHeader>
               <TableBody>
                 {filteredExpenses.map((expense) => {
-                  const category = categoryConfig[expense.category as keyof typeof categoryConfig];
+                  const category = categoryConfig[expense.category as keyof typeof categoryConfig] || { label: expense.category, icon: Package, color: "bg-gray-100 text-gray-700" };
                   const CategoryIcon = category.icon;
                   return (
                     <TableRow key={expense.id}>
@@ -455,7 +455,7 @@ export default function ExpensesPage() {
               </div>
               <div className="text-right">
                 <div className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold bg-primary-foreground text-primary")}>
-                  {selectedExpense ? categoryConfig[selectedExpense.category as keyof typeof categoryConfig].label : ""}
+                  {selectedExpense ? (categoryConfig[selectedExpense.category as keyof typeof categoryConfig]?.label || selectedExpense.category) : ""}
                 </div>
               </div>
             </div>

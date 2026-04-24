@@ -31,9 +31,13 @@ import {
   MapPin,
   ShieldCheck,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  DollarSign,
+  CalendarDays
 } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { clientsApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function EditClientPage() {
   const router = useRouter();
@@ -48,34 +52,50 @@ export default function EditClientPage() {
     company: "",
     phone: "",
     address: "",
+    address: "",
     status: "active",
     totalInvoiced: 0,
     totalPaid: 0,
+    monthlyRate: 0,
+    preferredBillingDay: 1,
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setFormData({
-        name: "Acme Corporation",
-        email: "billing@acme.com",
-        company: "Acme Corp",
-        phone: "+1 (555) 123-4567",
-        address: "123 Business Ave, New York, NY 10001",
-        status: "active",
-        totalInvoiced: 45000,
-        totalPaid: 40500,
-      });
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    const id = Array.isArray(params.id) ? params.id[0] : params.id;
+    if (!id) return;
+
+    clientsApi.getById(parseInt(id))
+      .then(data => {
+        setFormData({
+          name: data.name || "",
+          email: data.email || "",
+          company: data.company || "",
+          phone: data.phone || "",
+          address: data.address || "",
+          status: "active",
+          totalInvoiced: (data as any).lifetimeRevenue || 0,
+          totalPaid: (data as any).totalPaidAmount || 0,
+          monthlyRate: data.monthlyRate || 0,
+          preferredBillingDay: data.preferredBillingDay || 1,
+        });
+      })
+      .catch(() => toast.error("Failed to load client profile"))
+      .finally(() => setIsLoading(false));
   }, [params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    router.push("/dashboard/clients");
+    try {
+      const id = Array.isArray(params.id) ? params.id[0] : params.id;
+      await clientsApi.update(parseInt(id!), formData);
+      toast.success("Client profile updated successfully");
+      router.push("/dashboard/clients");
+    } catch {
+      toast.error("Failed to update client profile");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -182,6 +202,36 @@ export default function EditClientPage() {
                           <span className="text-2xl font-black text-foreground">{formatCurrency(formData.totalInvoiced)}</span>
                        </div>
                        <TrendingUp className="h-8 w-8 text-emerald-500/30" />
+                    </div>
+                 </div>
+
+                 <div className="grid gap-6 md:grid-cols-2 mt-8">
+                    <div className="space-y-2">
+                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-2">
+                          <DollarSign className="h-3 w-3" />
+                          Monthly Retainer Rate
+                       </Label>
+                       <Input 
+                         type="number" 
+                         value={formData.monthlyRate} 
+                         onChange={e => setFormData({...formData, monthlyRate: parseFloat(e.target.value) || 0})} 
+                         className="h-12 rounded-2xl border-primary/20 bg-primary/5 font-black text-primary text-lg" 
+                       />
+                       <p className="text-[10px] text-muted-foreground italic font-medium">Used for automatic end-of-month invoice generation.</p>
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-2">
+                          <CalendarDays className="h-3 w-3" />
+                          Preferred Billing Day
+                       </Label>
+                       <Input 
+                         type="number" 
+                         min="1" 
+                         max="31" 
+                         value={formData.preferredBillingDay} 
+                         onChange={e => setFormData({...formData, preferredBillingDay: parseInt(e.target.value) || 1})} 
+                         className="h-12 rounded-2xl border-border/50 bg-muted/20" 
+                       />
                     </div>
                  </div>
               </CardContent>

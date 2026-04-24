@@ -98,28 +98,37 @@
                        (.contains (.toLowerCase ref) (.toLowerCase (:reference inv))))))
             invoices)))
 
-(defn calculate-late-fees
-  "Rule: 5% late fee if > 30 days overdue, 10% if > 60 days"
-  [invoice]
-  (let [days (:days_overdue invoice)]
-    (cond
-      (> days 60) (* (:amount invoice) 0.10)
-      (> days 30) (* (:amount invoice) 0.05)
-      :else 0)))
+(defn calculate-tax-deduction
+  "Rule: Simple progressive tax. 15% < 5000, 25% < 10000, 35% above"
+  [gross]
+  (cond
+    (< gross 5000) (* gross 0.15)
+    (< gross 10000) (* gross 0.25)
+    :else (* gross 0.35)))
 
-(defn handle-reconcile [request]
+(defn determine-tax-rate
+  "Rule: Determine tax percentage based on region and product category"
+  [region category]
+  (case region
+    "EU" (if (= category "DIGITAL") 0.21 0.15)
+    "US" 0.08
+    "UK" 0.20
+    0.18)) ;; Default global tax
+
+(defn handle-payroll [request]
   (let [body (json/parse-string (slurp (:body request)) true)
-        matches (match-reconciliation (:entry body) (:invoices body))]
+        gross (:gross_salary body)
+        tax (calculate-tax-deduction gross)]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/generate-string matches)}))
+     :body (json/generate-string {:gross gross :tax tax :net (- gross tax)})}))
 
-(defn handle-late-fees [request]
-  (let [invoice (json/parse-string (slurp (:body request)) true)
-        fee (calculate-late-fees invoice)]
+(defn handle-tax-rate [request]
+  (let [body (json/parse-string (slurp (:body request)) true)
+        rate (determine-tax-rate (:region body) (:category body))]
     {:status 200
      :headers {"Content-Type" "application/json"}
-     :body (json/generate-string {:late_fee fee})}))
+     :body (json/generate-string {:tax_rate rate})}))
 
 (defroutes app-routes
   (GET "/" [] (json/generate-string {:status "SmartFlow Rules Engine is running"}))
@@ -128,6 +137,8 @@
   (POST "/api/v1/rules/marketplace" [] handle-marketplace)
   (POST "/api/v1/rules/reconcile" [] handle-reconcile)
   (POST "/api/v1/rules/late-fees" [] handle-late-fees)
+  (POST "/api/v1/rules/payroll" [] handle-payroll)
+  (POST "/api/v1/rules/tax-rate" [] handle-tax-rate)
   (route/not-found "Not Found"))
 
 ;; --- Entry Point ---

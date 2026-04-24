@@ -19,7 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -31,7 +31,8 @@ import { toast } from "sonner";
 import { cn, formatDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { invoicesApi, type Invoice } from "@/lib/api";
+import { invoicesApi, clientsApi, type Invoice, type Client } from "@/lib/api";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
   DRAFT:   { label: "Draft",   icon: FileText,      className: "bg-muted text-muted-foreground border-muted" },
@@ -52,6 +53,10 @@ export default function InvoicesPage() {
   const [invoiceToDelete, setInvoiceToDelete] = useState<number | null>(null);
   const [sendingReminder, setSendingReminder] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenDialogOpen, setIsGenDialogOpen] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientsForGen, setSelectedClientsForGen] = useState<number[]>([]);
+  const [genSearchQuery, setGenSearchQuery] = useState("");
 
   const fetchInvoices = () => {
     setLoading(true);
@@ -61,7 +66,10 @@ export default function InvoicesPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchInvoices(); }, []);
+  useEffect(() => { 
+    fetchInvoices();
+    clientsApi.getAll().then(setClients).catch(console.error);
+  }, []);
 
   const handleSendReminder = async (id: number) => {
     setSendingReminder(id);
@@ -86,8 +94,11 @@ export default function InvoicesPage() {
   const handleGenerateInvoices = async () => {
     setIsGenerating(true);
     try {
-      await invoicesApi.generateRecurring();
+      const clientIds = selectedClientsForGen.length > 0 ? selectedClientsForGen : undefined;
+      await invoicesApi.generateRecurring(clientIds);
       toast.success("Invoices successfully generated for clients.");
+      setIsGenDialogOpen(false);
+      setSelectedClientsForGen([]);
       fetchInvoices();
     } catch {
       toast.error("Failed to generate invoices.");
@@ -131,10 +142,79 @@ export default function InvoicesPage() {
           <p className="text-muted-foreground">Create, manage, and track all your invoices</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleGenerateInvoices} disabled={isGenerating}>
-            {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Auto-Generate
-          </Button>
+          <Dialog open={isGenDialogOpen} onOpenChange={setIsGenDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Bulk Generate
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] rounded-[2rem]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black">Recurring Billing</DialogTitle>
+                <DialogDescription className="font-medium">
+                  Select clients to generate monthly invoices based on their set rates.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4 max-h-[450px] overflow-y-auto pr-2">
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search clients..." 
+                    value={genSearchQuery}
+                    onChange={(e) => setGenSearchQuery(e.target.value)}
+                    className="pl-9 rounded-xl"
+                  />
+                </div>
+                <div className="flex items-center justify-between px-2 pb-2 border-b">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Client Entity</p>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monthly Rate</p>
+                </div>
+                {clients.filter(c => c.name.toLowerCase().includes(genSearchQuery.toLowerCase())).map((client) => {
+                  const hasRate = (client.monthlyRate || 0) > 0;
+                  return (
+                    <div key={client.id} className={cn(
+                      "flex items-center justify-between p-3 rounded-2xl transition-colors border border-transparent",
+                      hasRate ? "hover:bg-muted/50 hover:border-border/50" : "opacity-60 bg-muted/20"
+                    )}>
+                      <div className="flex items-center gap-3">
+                        <Checkbox 
+                          id={`client-${client.id}`} 
+                          checked={selectedClientsForGen.includes(client.id)}
+                          disabled={!hasRate}
+                          onCheckedChange={(checked) => {
+                            if (checked) setSelectedClientsForGen([...selectedClientsForGen, client.id]);
+                            else setSelectedClientsForGen(selectedClientsForGen.filter(id => id !== client.id));
+                          }}
+                        />
+                        <label htmlFor={`client-${client.id}`} className={cn("font-bold", hasRate ? "cursor-pointer" : "cursor-not-allowed")}>
+                          {client.name}
+                          {!hasRate && <span className="ml-2 text-[8px] bg-red-100 text-red-600 px-1 rounded">NO RATE SET</span>}
+                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">{client.company || 'Private Client'}</p>
+                        </label>
+                      </div>
+                      <div className="text-right">
+                         <p className={cn("font-black", hasRate ? "text-primary" : "text-muted-foreground")}>
+                           {hasRate ? formatCurrency(client.monthlyRate!) : "—"}
+                         </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="pt-4 flex gap-3">
+                 <Button variant="ghost" className="flex-1 font-bold h-12 rounded-2xl" onClick={() => setSelectedClientsForGen(clients.filter(c => (c.monthlyRate || 0) > 0).map(c => c.id))}>Select All Billable</Button>
+                 <Button 
+                   className="flex-[2] font-black gap-2 h-12 rounded-2xl" 
+                   onClick={handleGenerateInvoices}
+                   disabled={isGenerating || (selectedClientsForGen.length === 0)}
+                 >
+                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                   Generate {selectedClientsForGen.length > 0 ? selectedClientsForGen.length : ''} Invoices
+                 </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button asChild className="gap-2">
             <Link href="/dashboard/invoices/new"><Plus className="h-4 w-4" /> Create Invoice</Link>
           </Button>
