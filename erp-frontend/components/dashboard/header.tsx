@@ -24,50 +24,26 @@ interface HeaderProps {
   sidebarCollapsed: boolean;
 }
 
-const notifications = [
-  {
-    id: 1,
-    title: "Invoice #INV-001 paid",
-    description: "Payment of $5,400 received from Acme Corp",
-    time: "2 minutes ago",
-    unread: true,
-    type: "payment",
-  },
-  {
-    id: 2,
-    title: "New client registered",
-    description: "Tech Solutions Inc. joined your client list",
-    time: "1 hour ago",
-    unread: true,
-    type: "client",
-  },
-  {
-    id: 3,
-    title: "Payment overdue",
-    description: "Invoice #INV-089 is 7 days overdue ($3,200)",
-    time: "3 hours ago",
-    unread: false,
-    type: "alert",
-  },
-  {
-    id: 4,
-    title: "AI Insight: Cash flow alert",
-    description: "Predicted cash flow shortage in 14 days",
-    time: "5 hours ago",
-    unread: true,
-    type: "ai",
-  },
-];
+import { useState, useEffect } from "react";
+import { notificationsApi } from "@/lib/api";
 
 const typeColors = {
   payment: "bg-emerald-500",
   client: "bg-purple-500",
   alert: "bg-red-500",
   ai: "bg-amber-500",
+  system: "bg-slate-500",
+  invoice: "bg-blue-500",
 };
 
 export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    notificationsApi.getAll().then(setNotifications).catch(console.error);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => n.unread || !n.read).length;
 
   return (
     <TooltipProvider>
@@ -144,20 +120,20 @@ export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
                       <div
                         className={cn(
                           "mt-0.5 h-2 w-2 rounded-full flex-shrink-0",
-                          notification.unread
-                            ? typeColors[notification.type as keyof typeof typeColors]
+                          (notification.unread || !notification.read)
+                            ? typeColors[notification.type as keyof typeof typeColors] || "bg-primary"
                             : "bg-transparent"
                         )}
                       />
                       <div className="flex-1 space-y-1">
-                        <p className={cn("text-sm leading-tight", notification.unread && "font-medium")}>
-                          {notification.title}
+                        <p className={cn("text-sm leading-tight", (notification.unread || !notification.read) && "font-medium")}>
+                          {notification.title || notification.message}
                         </p>
                         <p className="text-xs text-muted-foreground leading-tight">
-                          {notification.description}
+                          {notification.description || notification.message}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {notification.time}
+                          {notification.time || new Date(notification.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </DropdownMenuItem>

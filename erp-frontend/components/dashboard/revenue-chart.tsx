@@ -20,12 +20,22 @@ export function RevenueChart() {
   const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    analyticsApi.getCashflow().then(cashflow => {
-      setData(cashflow.map(c => ({
-        month: c.period,
-        revenue: c.inflow,
-        expenses: c.outflow
-      })));
+    analyticsApi.getCashflow().then((cashflow: any) => {
+      let parsedCashflow: any[] = [];
+      if (Array.isArray(cashflow)) {
+        parsedCashflow = cashflow.map(c => ({
+          month: c.period,
+          revenue: c.inflow,
+          expenses: c.outflow
+        }));
+      } else if (cashflow && typeof cashflow === 'object') {
+        parsedCashflow = Object.entries(cashflow).map(([date, amount]) => ({
+          month: date,
+          revenue: amount as number,
+          expenses: 0
+        }));
+      }
+      setData(parsedCashflow);
     }).catch(console.error);
   }, []);
 

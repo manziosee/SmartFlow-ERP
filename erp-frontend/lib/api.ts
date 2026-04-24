@@ -174,6 +174,10 @@ export const invoicesApi = {
     apiFetch<Invoice>(`${API_URL}/invoices`, { method: "POST", body: JSON.stringify(data) }),
   sendReminder: (id: number) =>
     apiFetch<void>(`${API_URL}/invoices/${id}/remind`, { method: "POST" }),
+  sendInvoice: (id: number) =>
+    apiFetch<Invoice>(`${API_URL}/invoices/${id}/send`, { method: "POST" }),
+  generateRecurring: () =>
+    apiFetch<Invoice[]>(`${API_URL}/invoices/generate`, { method: "POST" }),
 };
 
 // ─── CLIENTS ──────────────────────────────────────────────────────────────
@@ -184,6 +188,7 @@ export const clientsApi = {
     apiFetch<Client>(`${API_URL}/clients`, { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: Partial<Client>) =>
     apiFetch<Client>(`${API_URL}/clients/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id: number) => apiFetch<void>(`${API_URL}/clients/${id}`, { method: "DELETE" }),
 };
 
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────
@@ -277,6 +282,13 @@ export const rulesApi = {
       method: "POST",
       body: JSON.stringify(invoice),
     }),
+};
+
+// ─── BACKUPS ────────────────────────────────────────────────────────────────
+export const backupApi = {
+  getStats: () => apiFetch<any>(`${API_URL}/backups/stats`),
+  trigger: () => apiFetch<any>(`${API_URL}/backups/trigger`, { method: "POST" }),
+  schedule: (time: string) => apiFetch<any>(`${API_URL}/backups/schedule`, { method: "POST", body: JSON.stringify({ time }) }),
 };
 
 // ─── USERS ─────────────────────────────────────────────────────────────────

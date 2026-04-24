@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RoleGate } from "@/components/auth/role-gate";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,124 +65,50 @@ interface RecoveryCase {
   status: "pending" | "contacted" | "promised" | "failed" | "resolved";
 }
 
-const recoveryCases: RecoveryCase[] = [
-  {
-    id: "1",
-    invoiceNumber: "INV-089",
-    client: "Global Dynamics",
-    clientEmail: "finance@globaldynamics.com",
-    amount: 6200,
-    currency: "USD",
-    dueDate: "2024-01-10",
-    daysOverdue: 45,
-    remindersCount: 3,
-    lastReminder: "3 days ago",
-    riskScore: 78,
-    assignedAgent: "John Doe",
-    status: "contacted",
-  },
-  {
-    id: "2",
-    invoiceNumber: "INV-092",
-    client: "StartUp Labs",
-    clientEmail: "billing@startuplabs.io",
-    amount: 3450,
-    currency: "USD",
-    dueDate: "2024-01-25",
-    daysOverdue: 30,
-    remindersCount: 2,
-    lastReminder: "1 week ago",
-    riskScore: 45,
-    assignedAgent: "Sarah Smith",
-    status: "promised",
-  },
-  {
-    id: "3",
-    invoiceNumber: "INV-098",
-    client: "Digital Ventures",
-    clientEmail: "accounts@digitalventures.co",
-    amount: 1850,
-    currency: "USD",
-    dueDate: "2024-02-01",
-    daysOverdue: 23,
-    remindersCount: 1,
-    lastReminder: "2 weeks ago",
-    riskScore: 32,
-    assignedAgent: "John Doe",
-    status: "pending",
-  },
-  {
-    id: "4",
-    invoiceNumber: "INV-101",
-    client: "NextGen Solutions",
-    clientEmail: "pay@nextgen.io",
-    amount: 4100,
-    currency: "USD",
-    dueDate: "2024-02-05",
-    daysOverdue: 19,
-    remindersCount: 1,
-    lastReminder: "5 days ago",
-    riskScore: 28,
-    assignedAgent: "Sarah Smith",
-    status: "pending",
-  },
-  {
-    id: "5",
-    invoiceNumber: "INV-078",
-    client: "TechCorp Inc.",
-    clientEmail: "billing@techcorp.com",
-    amount: 2500,
-    currency: "USD",
-    dueDate: "2024-02-10",
-    daysOverdue: 14,
-    remindersCount: 0,
-    lastReminder: "Never",
-    riskScore: 15,
-    assignedAgent: "John Doe",
-    status: "pending",
-  },
-];
-
-const statusConfig = {
-  pending: {
-    label: "Pending",
-    color: "bg-slate-100 text-slate-700 border-slate-200",
-  },
-  contacted: {
-    label: "Contacted",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  promised: {
-    label: "Promised Payment",
-    color: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  failed: {
-    label: "Failed Recovery",
-    color: "bg-red-100 text-red-700 border-red-200",
-  },
-  resolved: {
-    label: "Resolved",
-    color: "bg-green-100 text-green-700 border-green-200",
-  },
+const statusConfig: Record<string, { label: string; color: string }> = {
+  pending: { label: "Pending", color: "bg-slate-100 text-slate-700 border-slate-200" },
+  contacted: { label: "Contacted", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  promised: { label: "Promised Payment", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  failed: { label: "Failed Recovery", color: "bg-red-100 text-red-700 border-red-200" },
+  resolved: { label: "Resolved", color: "bg-green-100 text-green-700 border-green-200" },
 };
 
 export default function RecoveryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [recoveryCases, setRecoveryCases] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const totalOverdue = recoveryCases.reduce((acc, inv) => acc + inv.amount, 0);
-  const highRiskCount = recoveryCases.filter((inv) => inv.riskScore >= 60).length;
-  const avgDaysOverdue = Math.round(
-    recoveryCases.reduce((acc, inv) => acc + inv.daysOverdue, 0) / recoveryCases.length
-  );
+  useEffect(() => {
+    import("@/lib/api").then(({ recoveryApi }) => {
+      recoveryApi.getAll()
+        .then((data) => setRecoveryCases(data))
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    });
+  }, []);
 
-  const filteredInvoices = recoveryCases.filter((invoice) => {
+  const totalOverdue = recoveryCases.reduce((acc, c) => acc + (c.invoice?.amount || 0), 0);
+  const highRiskCount = recoveryCases.filter((c) => (c.invoice?.client?.riskIndex || 0) >= 60).length;
+  
+  // Calculate average days overdue
+  const avgDaysOverdue = recoveryCases.length > 0 
+    ? Math.round(
+        recoveryCases.reduce((acc, c) => {
+          if (!c.invoice?.dueDate) return acc;
+          const diffTime = Math.abs(new Date().getTime() - new Date(c.invoice.dueDate).getTime());
+          return acc + Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }, 0) / recoveryCases.length
+      )
+    : 0;
+
+  const filteredCases = recoveryCases.filter((c) => {
     const matchesSearch =
-      invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.client.toLowerCase().includes(searchQuery.toLowerCase());
+      (c.invoice?.id?.toString() || "").includes(searchQuery) ||
+      (c.invoice?.client?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     if (activeTab === "all") return matchesSearch;
-    return matchesSearch && invoice.status === activeTab;
+    return matchesSearch && c.status.toLowerCase() === activeTab;
   });
 
   const getRiskColor = (score: number) => {
@@ -320,54 +246,61 @@ export default function RecoveryPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredInvoices.map((invoice) => (
-                        <TableRow key={invoice.id}>
+                      {filteredCases.map((c) => {
+                        const daysOverdue = c.invoice?.dueDate 
+                          ? Math.ceil((new Date().getTime() - new Date(c.invoice.dueDate).getTime()) / (1000 * 3600 * 24))
+                          : 0;
+                        const riskScore = c.invoice?.client?.riskIndex || 0;
+                        const agent = c.assignedAgent || "System Agent";
+
+                        return (
+                        <TableRow key={c.id}>
                           <TableCell className="font-mono font-medium">
-                            {invoice.invoiceNumber}
+                            INV-{c.invoice?.id?.toString().padStart(3, '0')}
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{invoice.client}</p>
+                              <p className="font-medium">{c.invoice?.client?.name || 'Unknown'}</p>
                               <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                {invoice.clientEmail}
+                                {c.invoice?.client?.email || 'N/A'}
                               </p>
                             </div>
                           </TableCell>
                           <TableCell className="text-right font-semibold">
-                            ${invoice.amount.toLocaleString()}
+                            ${(c.invoice?.amount || 0).toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <span className="text-red-600 font-medium whitespace-nowrap">
-                              {invoice.daysOverdue} days
+                              {daysOverdue} days
                             </span>
                           </TableCell>
                           <TableCell>
                             <div
                               className={cn(
                                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-                                getRiskColor(invoice.riskScore)
+                                getRiskColor(riskScore)
                               )}
                             >
-                              {invoice.riskScore}%
+                              {riskScore}%
                             </div>
                           </TableCell>
                           <TableCell>
                              <div className="flex items-center gap-2">
                                <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
-                                 {invoice.assignedAgent.split(' ').map(n => n[0]).join('')}
+                                 {agent.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                                </div>
-                               <span className="text-sm">{invoice.assignedAgent}</span>
+                               <span className="text-sm">{agent}</span>
                              </div>
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant="outline"
                               className={cn(
-                                "font-medium whitespace-nowrap",
-                                statusConfig[invoice.status].color
+                                "font-medium whitespace-nowrap capitalize",
+                                statusConfig[c.status.toLowerCase()]?.color || statusConfig['pending'].color
                               )}
                             >
-                              {statusConfig[invoice.status].label}
+                              {statusConfig[c.status.toLowerCase()]?.label || c.status}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -401,7 +334,7 @@ export default function RecoveryPage() {
                             </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )})}
                     </TableBody>
                   </Table>
                 </div>

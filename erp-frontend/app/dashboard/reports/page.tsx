@@ -73,12 +73,22 @@ export default function ReportsPage() {
           invoicesApi.getAll(),
         ]);
 
-        const revData = cashflow.map((c) => ({
-          month: c.period,
-          revenue: c.inflow,
-          expenses: c.outflow,
-          profit: c.net,
-        }));
+        let revData: any[] = [];
+        if (Array.isArray(cashflow)) {
+          revData = cashflow.map((c: any) => ({
+            month: c.period,
+            revenue: c.inflow,
+            expenses: c.outflow,
+            profit: c.net,
+          }));
+        } else if (cashflow && typeof cashflow === 'object') {
+          revData = Object.entries(cashflow).map(([date, amount]) => ({
+            month: date,
+            revenue: amount as number,
+            expenses: 0,
+            profit: amount as number,
+          }));
+        }
         setRevenueData(revData.length ? revData : [
           { month: "Jan", revenue: 0, expenses: 0, profit: 0 }
         ]);

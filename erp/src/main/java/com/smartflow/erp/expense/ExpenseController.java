@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,7 +25,8 @@ public class ExpenseController {
 
     @PostMapping
     @Operation(summary = "Create a new expense")
-    public Expense createExpense(@RequestBody Expense expense) {
+    public Expense createExpense(@RequestBody Expense expense, @AuthenticationPrincipal com.smartflow.erp.auth.User user) {
+        expense.setSubmittedBy(user);
         return expenseRepository.save(expense);
     }
 

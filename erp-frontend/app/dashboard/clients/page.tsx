@@ -79,8 +79,15 @@ export default function ClientsPage() {
 
   const handleDeleteClient = async () => {
     if (!clientToDelete) return;
-    toast.info("Client deletion requires admin approval. Contact support.");
-    setClientToDelete(null);
+    try {
+      await clientsApi.delete(clientToDelete);
+      toast.success("Client deleted successfully!");
+      setClientToDelete(null);
+      fetchClients();
+    } catch {
+      toast.error("Failed to delete client. Admin approval may be required.");
+      setClientToDelete(null);
+    }
   };
 
   const filteredClients = clients.filter((c) =>
