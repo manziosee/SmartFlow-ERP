@@ -50,6 +50,12 @@ public class Client {
 
     @Builder.Default
     private Integer averagePaymentDelayDays = 0;
+    
+    @Builder.Default
+    private BigDecimal monthlyRate = BigDecimal.ZERO;
+    
+    @Builder.Default
+    private Integer preferredBillingDay = 1; // Default to 1st of month
 
     @Column(updatable = false)
     @Builder.Default

@@ -23,7 +23,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/cashflow")
-    public ResponseEntity<Map<LocalDate, BigDecimal>> getCashflowForecast() {
+    public ResponseEntity<Map<String, BigDecimal>> getCashflowForecast() {
         return ResponseEntity.ok(analyticsService.getCashflowForecast());
     }
 }

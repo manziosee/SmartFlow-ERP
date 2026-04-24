@@ -51,11 +51,13 @@ export interface AuthResponse {
 
 export interface Invoice {
   id: number;
+  invoiceNumber?: string;
   client: { id: number; name: string; email: string };
   amount: number;
   status: string;
   issueDate: string;
   dueDate: string;
+  items?: any[];
 }
 
 export interface Client {
@@ -67,6 +69,8 @@ export interface Client {
   address?: string;
   riskIndex?: number;
   averagePaymentDelayDays?: number;
+  monthlyRate?: number;
+  preferredBillingDay?: number;
 }
 
 export interface Payment {
@@ -102,6 +106,53 @@ export interface AuditLog {
   entityId: string;
   performedBy: string;
   timestamp: string;
+}
+
+export interface Product {
+  id: number;
+  sku: string;
+  name: string;
+  description?: string;
+  category?: string;
+  unitPrice: number;
+  costPrice: number;
+  stockQuantity: number;
+  minStockLevel: number;
+  location?: string;
+}
+
+export interface Vendor {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  contactPerson?: string;
+  company?: string;
+  address?: string;
+  category?: string;
+  totalPurchasedAmount: number;
+  balanceDue: number;
+  reliabilityScore: number;
+}
+
+export interface Employee {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  department?: string;
+  jobTitle?: string;
+  baseSalary: number;
+  status: string;
+}
+
+export interface TaxRule {
+  id: number;
+  region: string;
+  taxType: string;
+  rate: number;
+  active: boolean;
 }
 
 export interface AnalyticsSummary {
@@ -176,8 +227,8 @@ export const invoicesApi = {
     apiFetch<void>(`${API_URL}/invoices/${id}/remind`, { method: "POST" }),
   sendInvoice: (id: number) =>
     apiFetch<Invoice>(`${API_URL}/invoices/${id}/send`, { method: "POST" }),
-  generateRecurring: () =>
-    apiFetch<Invoice[]>(`${API_URL}/invoices/generate`, { method: "POST" }),
+  generateRecurring: (clientIds?: number[]) =>
+    apiFetch<Invoice[]>(`${API_URL}/invoices/generate`, { method: "POST", body: clientIds ? JSON.stringify(clientIds) : undefined }),
 };
 
 // ─── CLIENTS ──────────────────────────────────────────────────────────────
@@ -298,4 +349,41 @@ export const usersApi = {
   update: (id: string | number, data: any) => apiFetch<any>(`${API_URL}/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id: string | number) => apiFetch<void>(`${API_URL}/users/${id}`, { method: "DELETE" }),
   resetPassword: (id: string | number, newPassword: string) => apiFetch<void>(`${API_URL}/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({ newPassword }) }),
+};
+// ─── INVENTORY ─────────────────────────────────────────────────────────────
+export const inventoryApi = {
+  getAll: () => apiFetch<Product[]>(`${API_URL}/inventory`),
+  getById: (id: number) => apiFetch<Product>(`${API_URL}/inventory/${id}`),
+  create: (data: Partial<Product>) =>
+    apiFetch<Product>(`${API_URL}/inventory`, { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<Product>) =>
+    apiFetch<Product>(`${API_URL}/inventory/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id: number) => apiFetch<void>(`${API_URL}/inventory/${id}`, { method: "DELETE" }),
+  getForecast: (sku: string, currentStock: number, avgDailySales: number) =>
+    apiFetch<any>(`${AI_URL}/forecast/inventory/${sku}?current_stock=${currentStock}&avg_daily_sales=${avgDailySales}`),
+};
+
+// ─── VENDORS ──────────────────────────────────────────────────────────────
+export const vendorsApi = {
+  getAll: () => apiFetch<Vendor[]>(`${API_URL}/vendors`),
+  getById: (id: number) => apiFetch<Vendor>(`${API_URL}/vendors/${id}`),
+  create: (data: Partial<Vendor>) =>
+    apiFetch<Vendor>(`${API_URL}/vendors`, { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<Vendor>) =>
+    apiFetch<Vendor>(`${API_URL}/vendors/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id: number) => apiFetch<void>(`${API_URL}/vendors/${id}`, { method: "DELETE" }),
+};
+
+// ─── HR & PAYROLL ──────────────────────────────────────────────────────────
+export const hrApi = {
+  getEmployees: () => apiFetch<Employee[]>(`${API_URL}/hr/employees`),
+  calculatePayroll: (gross: number) => 
+    apiFetch<any>(`${RULES_URL}/payroll`, { method: "POST", body: JSON.stringify({ gross_salary: gross }) }),
+};
+
+// ─── TAXES ────────────────────────────────────────────────────────────────
+export const taxesApi = {
+  getRules: () => apiFetch<TaxRule[]>(`${API_URL}/config/taxes`),
+  calculateRate: (region: string, category: string) =>
+    apiFetch<{ tax_rate: number }>(`${RULES_URL}/tax-rate`, { method: "POST", body: JSON.stringify({ region, category }) }),
 };

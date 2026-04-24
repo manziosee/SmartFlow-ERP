@@ -28,7 +28,7 @@ app = FastAPI(
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,6 +66,12 @@ class ExpenseCategorization(BaseModel):
     description: str
     suggested_category: str
     confidence: float
+
+class StockForecast(BaseModel):
+    sku: str
+    days_until_out: int
+    predicted_reorder_date: str
+    recommendation: str
 
 # --- OpenAI Integration ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -214,6 +220,24 @@ async def categorize_expense(description: str):
         "description": description,
         "suggested_category": category,
         "confidence": 0.95 if suggested else 0.5
+    }
+
+@app.get("/api/v1/ai/forecast/inventory/{sku}", response_model=StockForecast)
+async def predict_inventory_stock(sku: str, current_stock: int, avg_daily_sales: float):
+    """
+    Predict when stock will run out based on current levels and burn rate.
+    """
+    days_left = int(current_stock / avg_daily_sales) if avg_daily_sales > 0 else 365
+    predicted_date = datetime.now() + timedelta(days=days_left)
+    
+    prompt = f"Product {sku} has {current_stock} units left. Daily sales average is {avg_daily_sales}. It will run out in {days_left} days. Give a 1 sentence strategic reordering advice."
+    recommendation = call_openai(prompt)
+    
+    return {
+        "sku": sku,
+        "days_until_out": days_left,
+        "predicted_reorder_date": predicted_date.strftime("%Y-%m-%d"),
+        "recommendation": recommendation.strip() if recommendation else "Reorder when stock reach 20%."
     }
 
 if __name__ == "__main__":

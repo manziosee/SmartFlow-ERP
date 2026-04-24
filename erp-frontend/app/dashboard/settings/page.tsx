@@ -43,6 +43,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [backupStats, setBackupStats] = useState<any>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [backupTime, setBackupTime] = useState("02:00");
 
   useEffect(() => {
     if (user?.role === 'ADMIN') {
@@ -480,11 +481,15 @@ export default function SettingsPage() {
 
                   <div className="flex gap-4 pt-4">
                      <div className="flex-1 flex gap-2">
-                        <Input type="time" defaultValue="02:00" className="w-32 h-12" id="backup-time" />
+                        <Input 
+                          type="time" 
+                          value={backupTime}
+                          onChange={(e) => setBackupTime(e.target.value)}
+                          className="w-32 h-12" 
+                        />
                         <Button variant="outline" className="h-12 font-bold" onClick={async () => {
-                          const time = (document.getElementById('backup-time') as HTMLInputElement).value;
                           try {
-                            const res = await backupApi.schedule(time);
+                            const res = await backupApi.schedule(backupTime);
                             toast.success(res.message);
                           } catch {
                             toast.error("Failed to schedule backup");
