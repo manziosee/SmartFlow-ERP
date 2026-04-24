@@ -1,10 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import List, Optional
 from pydantic import BaseModel
+import json
+import urllib.request
+import re
 
 # Mocking database to stop 'Could not find name get_db' errors if file is missing
 def get_db():
@@ -62,6 +66,32 @@ class ExpenseCategorization(BaseModel):
     description: str
     suggested_category: str
     confidence: float
+
+# --- OpenAI Integration ---
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+def call_openai(prompt: str, system_prompt: str = "You are a financial AI assistant. Be concise and precise.") -> str:
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENAI_API_KEY}"
+    }
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.1
+    }
+    req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers)
+    try:
+        with urllib.request.urlopen(req) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            return res_data["choices"][0]["message"]["content"]
+    except Exception as e:
+        print(f"OpenAI API Error: {e}")
+        return ""
 
 # --- AI Logic ---
 
@@ -135,12 +165,18 @@ async def predict_payment(invoice_id: str, due_date: str, client_avg_delay: int)
 
 @app.get("/api/v1/ai/risk/{invoice_id}", response_model=RiskAnalysisResponse)
 async def analyze_invoice_risk(invoice_id: str, amount: float, days_overdue: int, client_risk_index: int):
+    # Use OpenAI to generate recommendation based on parameters
+    prompt = f"Invoice {invoice_id} is overdue by {days_overdue} days. Amount is {amount}. Client historical risk index is {client_risk_index} out of 100. Provide a 1 sentence recommendation on how to handle this debt collection."
+    recommendation = call_openai(prompt)
+    if not recommendation:
+        recommendation = "Firm reminder and credit hold"
+        
     score = calculate_risk(amount, days_overdue, client_risk_index)
     return {
         "invoice_id": invoice_id,
         "risk_score": score,
         "priority": "HIGH" if score > 0.7 else "MEDIUM" if score > 0.4 else "LOW",
-        "recommendation": "Firm reminder and credit hold" if score > 0.7 else "Standard follow-up"
+        "recommendation": recommendation.strip()
     }
 
 @app.get("/api/v1/ai/forecast/cashflow", response_model=List[CashflowForecast])
@@ -169,22 +205,15 @@ async def categorize_expense(description: str):
     """
     AI-powered categorization of expense descriptions.
     """
-    mapping = {
-        "aws": "IT Infrastructure",
-        "office": "Operations",
-        "travel": "Business Travel",
-        "salary": "Human Resources",
-        "rent": "Fixed Costs"
-    }
-    category = "General Expenses"
-    for key, val in mapping.items():
-        if key in description.lower():
-            category = val
-            break
+    prompt = f"Categorize the following business expense: '{description}'. Reply ONLY with the category name (e.g., IT Infrastructure, Operations, Business Travel, Human Resources, Fixed Costs, General Expenses, Software, Marketing, etc)."
+    suggested = call_openai(prompt, "You are a precise accountant categorizing expenses.")
+    
+    category = suggested.strip() if suggested else "General Expenses"
+    
     return {
         "description": description,
         "suggested_category": category,
-        "confidence": 0.85 if category != "General Expenses" else 0.5
+        "confidence": 0.95 if suggested else 0.5
     }
 
 if __name__ == "__main__":

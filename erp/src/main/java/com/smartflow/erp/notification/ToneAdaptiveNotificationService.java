@@ -54,7 +54,7 @@ public class ToneAdaptiveNotificationService {
         String message = generateRecoveryMessage(invoice);
         // Simulate sending via Email/SMS
         System.out.println("--- SENDING NOTIFICATION ---");
-        System.out.println("To: " + invoice.getClient().getContactEmail());
+        System.out.println("To: " + invoice.getClient().getEmail());
         System.out.println("Message: " + message);
         System.out.println("---------------------------");
         

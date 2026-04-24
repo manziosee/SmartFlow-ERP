@@ -46,98 +46,8 @@ interface Notification {
   link?: string;
 }
 
-const initialNotifications: Notification[] = [
-  {
-    id: 1,
-    type: "payment",
-    title: "Invoice #INV-001 paid",
-    description: "Payment of $5,400 received from Acme Corporation",
-    time: "2 minutes ago",
-    unread: true,
-    archived: false,
-  },
-  {
-    id: 2,
-    type: "client",
-    title: "New client registered",
-    description: "Tech Solutions Inc. joined your client list",
-    time: "1 hour ago",
-    unread: true,
-    archived: false,
-  },
-  {
-    id: 3,
-    type: "alert",
-    title: "Payment overdue",
-    description: "Invoice #INV-089 from Global Dynamics is 7 days overdue ($3,200)",
-    time: "3 hours ago",
-    unread: true,
-    archived: false,
-  },
-  {
-    id: 4,
-    type: "ai",
-    title: "AI Insight: Cash flow alert",
-    description: "Predicted cash flow shortage in 14 days. Review recommended actions.",
-    time: "5 hours ago",
-    unread: true,
-    archived: false,
-  },
-  {
-    id: 5,
-    type: "invoice",
-    title: "Invoice sent successfully",
-    description: "Invoice #INV-102 sent to StartUp Labs for $2,850",
-    time: "Yesterday",
-    unread: false,
-    archived: false,
-  },
-  {
-    id: 6,
-    type: "payment",
-    title: "Partial payment received",
-    description: "Digital Ventures paid $1,500 on Invoice #INV-078",
-    time: "Yesterday",
-    unread: false,
-    archived: false,
-  },
-  {
-    id: 7,
-    type: "system",
-    title: "Report generated",
-    description: "Monthly revenue report for January is ready to download",
-    time: "2 days ago",
-    unread: false,
-    archived: false,
-  },
-  {
-    id: 8,
-    type: "client",
-    title: "Client updated billing info",
-    description: "Acme Corporation updated their payment method",
-    time: "3 days ago",
-    unread: false,
-    archived: false,
-  },
-  {
-    id: 9,
-    type: "alert",
-    title: "Recovery reminder sent",
-    description: "Automatic reminder sent to Global Dynamics for overdue payment",
-    time: "4 days ago",
-    unread: false,
-    archived: false,
-  },
-  {
-    id: 10,
-    type: "ai",
-    title: "AI Recommendation",
-    description: "Consider offering early payment discount to improve cash flow",
-    time: "5 days ago",
-    unread: false,
-    archived: true,
-  },
-];
+import { useEffect } from "react";
+import { notificationsApi } from "@/lib/api";
 
 const typeConfig = {
   payment: {
@@ -173,10 +83,14 @@ const typeConfig = {
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("all");
 
-  const unreadCount = notifications.filter((n) => n.unread && !n.archived).length;
+  useEffect(() => {
+    notificationsApi.getAll().then(setNotifications).catch(console.error);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => (n.unread || !n.read) && !n.archived).length;
 
   const filteredNotifications = notifications.filter((notification) => {
     if (activeTab === "all") return !notification.archived;
@@ -185,10 +99,15 @@ export default function NotificationsPage() {
     return notification.type === activeTab && !notification.archived;
   });
 
-  const markAsRead = (id: number) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
+  const markAsRead = async (id: number) => {
+    try {
+      await notificationsApi.markRead(id);
+      setNotifications(
+        notifications.map((n) => (n.id === id ? { ...n, unread: false, read: true } : n))
+      );
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const markAllAsRead = () => {
@@ -361,19 +280,19 @@ export default function NotificationsPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className={cn("font-medium", notification.unread && "font-semibold")}>
-                                {notification.title}
+                              <h4 className={cn("font-medium", (notification.unread || !notification.read) && "font-semibold")}>
+                                {notification.title || notification.message}
                               </h4>
-                              {notification.unread && (
+                              {(notification.unread || !notification.read) && (
                                 <span className="h-2 w-2 rounded-full bg-primary" />
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-0.5">
-                              {notification.description}
+                              {notification.description || notification.message}
                             </p>
                             <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              <span>{notification.time}</span>
+                              <span>{notification.time || new Date(notification.createdAt).toLocaleString()}</span>
                             </div>
                           </div>
 
@@ -384,7 +303,7 @@ export default function NotificationsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              {notification.unread && (
+                              {(notification.unread || !notification.read) && (
                                 <DropdownMenuItem onClick={() => markAsRead(notification.id)}>
                                   <CheckCircle2 className="h-4 w-4 mr-2" />
                                   Mark as read

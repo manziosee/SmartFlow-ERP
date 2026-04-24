@@ -24,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, Search, Filter, Download, MoreHorizontal, Eye, Edit,
-  Send, Trash2, FileText, Clock, CheckCircle, AlertTriangle, Receipt, Loader2,
+  Send, Trash2, FileText, Clock, CheckCircle, AlertTriangle, Receipt, Loader2, RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -51,6 +51,7 @@ export default function InvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState<number | null>(null);
   const [sendingReminder, setSendingReminder] = useState<number | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchInvoices = () => {
     setLoading(true);
@@ -82,6 +83,29 @@ export default function InvoicesPage() {
       .catch(() => toast.error("Some reminders failed to send."));
   };
 
+  const handleGenerateInvoices = async () => {
+    setIsGenerating(true);
+    try {
+      await invoicesApi.generateRecurring();
+      toast.success("Invoices successfully generated for clients.");
+      fetchInvoices();
+    } catch {
+      toast.error("Failed to generate invoices.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSendInvoice = async (id: number) => {
+    try {
+      await invoicesApi.sendInvoice(id);
+      toast.success("Invoice sent to client.");
+      fetchInvoices();
+    } catch {
+      toast.error("Failed to send invoice.");
+    }
+  };
+
   const filteredInvoices = invoices.filter((inv) => {
     const clientName = inv.client?.name ?? "";
     const matchesSearch =
@@ -106,9 +130,15 @@ export default function InvoicesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
           <p className="text-muted-foreground">Create, manage, and track all your invoices</p>
         </div>
-        <Button asChild className="gap-2">
-          <Link href="/dashboard/invoices/new"><Plus className="h-4 w-4" /> Create Invoice</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleGenerateInvoices} disabled={isGenerating}>
+            {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Auto-Generate
+          </Button>
+          <Button asChild className="gap-2">
+            <Link href="/dashboard/invoices/new"><Plus className="h-4 w-4" /> Create Invoice</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -225,13 +255,19 @@ export default function InvoicesPage() {
                                 <Edit className="h-4 w-4 mr-2" /> Edit
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSendReminder(invoice.id)}
-                              disabled={sendingReminder === invoice.id}>
-                              {sendingReminder === invoice.id
-                                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                : <Send className="h-4 w-4 mr-2" />}
-                              Send Reminder
-                            </DropdownMenuItem>
+                            {statusKey === "DRAFT" ? (
+                              <DropdownMenuItem onClick={() => handleSendInvoice(invoice.id)}>
+                                <Send className="h-4 w-4 mr-2" /> Send Invoice
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleSendReminder(invoice.id)}
+                                disabled={sendingReminder === invoice.id}>
+                                {sendingReminder === invoice.id
+                                  ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  : <Send className="h-4 w-4 mr-2" />}
+                                Send Reminder
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive font-bold"
                               onClick={() => setInvoiceToDelete(invoice.id)}>

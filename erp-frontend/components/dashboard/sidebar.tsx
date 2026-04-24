@@ -190,12 +190,12 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
             <div className="border-t border-border p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground text-sm font-semibold shadow-sm">
-                  JD
+                  {user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">John Doe</p>
+                  <p className="text-sm font-medium truncate">{user?.name || "Unknown User"}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    john@acme.com
+                    {user?.email || "No email"}
                   </p>
                 </div>
               </div>

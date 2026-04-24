@@ -24,9 +24,11 @@ public class Client {
     @Column(nullable = false)
     private String name;
 
+    private String email;
+    private String phone;
     private String contactPerson;
-    private String contactEmail;
-    private String contactPhone;
+    private String company;
+    private String address;
     private String industry; // e.g. RETAIL, SERVICES
 
     // Financial Aggregates & AI ML scoring

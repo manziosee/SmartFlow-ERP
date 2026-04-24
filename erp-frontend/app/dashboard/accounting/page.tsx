@@ -239,11 +239,11 @@ export default function AccountingPage() {
                <div className="space-y-6">
                   <div className="space-y-1">
                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Est. Quarterly EBM sales</p>
-                     <p className="text-3xl font-black text-indigo-900 tracking-tighter">{formatCurrency(7450000)}</p>
+                     <p className="text-3xl font-black text-indigo-900 tracking-tighter">{formatCurrency(totals.netRevenue)}</p>
                   </div>
                   <div className="space-y-1">
                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Projected VAT Payable</p>
-                     <p className="text-3xl font-black text-indigo-600 tracking-tighter">{formatCurrency(7450000 * 0.18)}</p>
+                     <p className="text-3xl font-black text-indigo-600 tracking-tighter">{formatCurrency(totals.netRevenue * 0.18)}</p>
                   </div>
                   <Button className="w-full bg-indigo-600 hover:bg-indigo-700 font-extrabold rounded-2xl h-14 shadow-lg shadow-indigo-100">
                      Generate Tax Projection
@@ -259,7 +259,7 @@ export default function AccountingPage() {
                   <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
                </div>
                <h3 className="text-lg font-black mb-1">Bank Reconciliation</h3>
-               <p className="text-xs text-muted-foreground font-medium">Match 1,240 internal records with bank statements.</p>
+               <p className="text-xs text-muted-foreground font-medium">Match {taxRecords.length} internal records with bank statements.</p>
             </Card>
 
             <Card className="rounded-3xl border-border/50 p-8 shadow-none">

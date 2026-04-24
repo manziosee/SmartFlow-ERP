@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -22,8 +23,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Upload, Building, CreditCard, Bell, Shield, Palette } from "lucide-react";
+import { Loader2, Upload, Building, CreditCard, Bell, Shield, Palette, Database } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { backupApi } from "@/lib/api";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { currency, setCurrency } = useCurrency();
@@ -35,6 +40,29 @@ export default function SettingsPage() {
     pushAll: false,
     weeklyReport: true,
   });
+  const { user } = useAuth();
+  const [backupStats, setBackupStats] = useState<any>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      backupApi.getStats().then(setBackupStats).catch(console.error);
+    }
+  }, [user]);
+
+  const handleBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      await backupApi.trigger();
+      toast.success("Database backup completed successfully.");
+      const stats = await backupApi.getStats();
+      setBackupStats(stats);
+    } catch {
+      toast.error("Failed to perform backup.");
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -74,6 +102,12 @@ export default function SettingsPage() {
             <Palette className="h-4 w-4" />
             Appearance
           </TabsTrigger>
+          {user?.role === 'ADMIN' && (
+            <TabsTrigger value="backups" className="gap-2">
+              <Database className="h-4 w-4" />
+              Database Backups
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Company Settings */}
@@ -410,6 +444,65 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Database Backups Settings */}
+        {user?.role === 'ADMIN' && (
+          <TabsContent value="backups" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Database Backups</CardTitle>
+                <CardDescription>
+                  Manage cross-region database backups for the primary and secondary databases.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="p-4 rounded-xl border bg-muted/20">
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Primary DB (Neon)</p>
+                     <p className="text-3xl font-black">{backupStats?.primaryDbSizeMB || 0} MB</p>
+                  </div>
+                  <div className="p-4 rounded-xl border bg-muted/20">
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Secondary DB (Turso)</p>
+                     <p className="text-3xl font-black">{backupStats?.secondaryDbSizeMB || 0} MB</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                     <div>
+                        <p className="font-bold">System Status</p>
+                        <p className="text-sm text-muted-foreground">Last Backup: {backupStats?.lastBackupTime ? new Date(backupStats.lastBackupTime).toLocaleString() : 'N/A'}</p>
+                     </div>
+                     <Badge className="bg-emerald-500 hover:bg-emerald-600 font-bold px-3">
+                        {backupStats?.status || "Healthy"}
+                     </Badge>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                     <div className="flex-1 flex gap-2">
+                        <Input type="time" defaultValue="02:00" className="w-32 h-12" id="backup-time" />
+                        <Button variant="outline" className="h-12 font-bold" onClick={async () => {
+                          const time = (document.getElementById('backup-time') as HTMLInputElement).value;
+                          try {
+                            const res = await backupApi.schedule(time);
+                            toast.success(res.message);
+                          } catch {
+                            toast.error("Failed to schedule backup");
+                          }
+                        }}>
+                          Set Schedule
+                        </Button>
+                     </div>
+                     <Button className="font-bold h-12 gap-2" onClick={handleBackup} disabled={isBackingUp}>
+                        {isBackingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                        Trigger Manual Backup
+                     </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

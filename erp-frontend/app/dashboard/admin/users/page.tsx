@@ -105,7 +105,7 @@ export default function UserManagementPage() {
   
   // Form states for new user
   const [newUser, setNewUser] = useState({
-    firstName: "", lastName: "", email: "", role: "MANAGER", companyName: ""
+    firstName: "", lastName: "", email: "", role: "MANAGER"
   });
 
   const filteredUsers = users.filter((u) => {
@@ -124,12 +124,11 @@ export default function UserManagementPage() {
          lastName: newUser.lastName,
          email: newUser.email,
          role: newUser.role,
-         companyName: newUser.companyName,
          password: "" // Default password will be set by backend
        });
-       toast.success("Staff member invited successfully.");
+       toast.success("Team member created successfully.");
        setIsAddUserOpen(false);
-       setNewUser({ firstName: "", lastName: "", email: "", role: "MANAGER", companyName: "" });
+       setNewUser({ firstName: "", lastName: "", email: "", role: "MANAGER" });
        loadUsers();
      } catch (err) {
        toast.error("Failed to add user");
@@ -204,7 +203,7 @@ export default function UserManagementPage() {
             <DialogTrigger asChild>
               <Button className="gap-2 font-black h-12 px-8 rounded-2xl shadow-xl shadow-primary/20 transform transition-all hover:scale-105 active:scale-95">
                 <UserPlus className="h-4 w-4" />
-                Invite Team Member
+                Create Team Member
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
@@ -230,10 +229,6 @@ export default function UserManagementPage() {
                   <Input id="email" type="email" value={newUser.email} onChange={(e) => setNewUser({...newUser, email: e.target.value})} placeholder="jane.doe@smartflow.com" className="h-11 rounded-xl bg-muted/20 border-border/50" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="company" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company</Label>
-                  <Input id="company" value={newUser.companyName} onChange={(e) => setNewUser({...newUser, companyName: e.target.value})} placeholder="Company Inc." className="h-11 rounded-xl bg-muted/20 border-border/50" />
-                </div>
-                <div className="space-y-1.5">
                   <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Enterprise Role</Label>
                   <Select value={newUser.role} onValueChange={(v) => setNewUser({...newUser, role: v})}>
                     <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-border/50">
@@ -252,7 +247,7 @@ export default function UserManagementPage() {
                   <Button variant="outline" className="flex-1 h-12 rounded-xl font-bold border-border bg-background" onClick={() => setIsAddUserOpen(false)}>Discard</Button>
                   <Button className="flex-1 h-12 rounded-xl font-bold gap-2" onClick={handleAddUser} disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-                    Send Invite
+                    Create User
                   </Button>
                 </div>
               </div>
