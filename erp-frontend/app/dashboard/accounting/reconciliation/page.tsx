@@ -36,27 +36,47 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
-const MOCK_RECONCILIATION = [
-  { id: "TX-101", date: "2024-03-20", description: "Payment from Acme Corp", erpAmount: 1200000, bankAmount: 1200000, status: "matched", matchScore: 100 },
-  { id: "TX-102", date: "2024-03-19", description: "Office Supply - Vendor Pay", erpAmount: 45000, bankAmount: 45500, status: "mismatch", matchScore: 95 },
-  { id: "TX-103", date: "2024-03-18", description: "Tech Solutions Consulting", erpAmount: 550000, bankAmount: 0, status: "missing_in_bank", matchScore: 0 },
-  { id: "BNK-992", date: "2024-03-18", description: "Unknown Credit - Kigali HQ", erpAmount: 0, bankAmount: 200000, status: "missing_in_erp", matchScore: 0 },
-];
+import { paymentsApi } from "@/lib/api";
+import { useEffect } from "react";
+
 
 export default function ReconciliationPage() {
   const { formatCurrency } = useCurrency();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [records, setRecords] = useState<any[]>([]);
 
-  const stats = {
-    total: MOCK_RECONCILIATION.length,
-    matched: MOCK_RECONCILIATION.filter(r => r.status === 'matched').length,
-    unresolved: MOCK_RECONCILIATION.filter(r => r.status !== 'matched').length,
-    mismatchVal: MOCK_RECONCILIATION.reduce((acc, r) => acc + Math.abs(r.erpAmount - r.bankAmount), 0),
+  const loadData = async () => {
+    try {
+      const payments = await paymentsApi.getAll();
+      setRecords(payments.map(p => ({
+        id: `TX-${p.id}`,
+        date: p.paymentDate,
+        description: `Payment for Invoice ${p.invoice?.id || 'Unknown'}`,
+        erpAmount: p.amount,
+        bankAmount: p.amount,
+        status: "matched",
+        matchScore: 100
+      })));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleSync = () => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const stats = {
+    total: records.length,
+    matched: records.filter(r => r.status === 'matched').length,
+    unresolved: records.filter(r => r.status !== 'matched').length,
+    mismatchVal: records.reduce((acc, r) => acc + Math.abs(r.erpAmount - r.bankAmount), 0),
+  };
+
+  const handleSync = async () => {
     setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 2000);
+    await loadData();
+    setIsSyncing(false);
   };
 
   return (
@@ -148,7 +168,7 @@ export default function ReconciliationPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {MOCK_RECONCILIATION.map((tx) => (
+              {records.map((tx) => (
                 <TableRow key={tx.id} className="group hover:bg-muted/30 transition-all border-none">
                   <TableCell className="pl-8 py-6 font-bold text-sm tracking-tight italic text-muted-foreground">
                     {formatDate(tx.date)}

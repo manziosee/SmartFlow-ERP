@@ -63,13 +63,8 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const INITIAL_USERS = [
-  { id: 1, firstName: "Admin", lastName: "User", email: "admin@smartflow.com", role: "ADMIN", status: "active", company: "SmartFlow Corp" },
-  { id: 2, firstName: "Alice", lastName: "Accountant", email: "alice@smartflow.com", role: "ACCOUNTANT", status: "active", company: "SmartFlow Corp" },
-  { id: 3, firstName: "Bob", lastName: "Manager", email: "bob@smartflow.com", role: "MANAGER", status: "active", company: "SmartFlow Corp" },
-  { id: 4, firstName: "Charlie", lastName: "Agent", email: "charlie@smartflow.com", role: "RECOVERY_AGENT", status: "active", company: "FastDebt Inc" },
-  { id: 5, firstName: "David", lastName: "ClientHub", email: "david@client.com", role: "CLIENT", status: "inactive", company: "External Client" },
-];
+import { usersApi } from "@/lib/api";
+import { useEffect } from "react";
 
 const roleConfig = {
   ADMIN: { label: "Administrator", icon: ShieldCheck, color: "bg-red-100 text-red-700 border-red-200" },
@@ -80,47 +75,117 @@ const roleConfig = {
 };
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadUsers = async () => {
+    try {
+      setIsLoading(true);
+      const data = await usersApi.getAll();
+      setUsers(data);
+    } catch (err) {
+      toast.error("Failed to load users");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  
+  // Form states for new user
+  const [newUser, setNewUser] = useState({
+    firstName: "", lastName: "", email: "", role: "MANAGER", companyName: ""
+  });
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch = 
-      `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+      `${u.name || (u.firstName + ' ' + u.lastName) || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || u.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const handleAddUser = async () => {
      setIsSubmitting(true);
-     await new Promise(r => setTimeout(r, 1000));
-     toast.success("Staff member invited successfully.");
-     setIsSubmitting(false);
-     setIsAddUserOpen(false);
+     try {
+       await usersApi.create({
+         firstName: newUser.firstName,
+         lastName: newUser.lastName,
+         email: newUser.email,
+         role: newUser.role,
+         companyName: newUser.companyName,
+         password: "" // Default password will be set by backend
+       });
+       toast.success("Staff member invited successfully.");
+       setIsAddUserOpen(false);
+       setNewUser({ firstName: "", lastName: "", email: "", role: "MANAGER", companyName: "" });
+       loadUsers();
+     } catch (err) {
+       toast.error("Failed to add user");
+     } finally {
+       setIsSubmitting(false);
+     }
   };
 
   const handleEditUser = async () => {
      setIsSubmitting(true);
-     await new Promise(r => setTimeout(r, 1000));
-     setUsers(users.map(u => u.id === selectedUser.id ? selectedUser : u));
-     toast.success("User permissions updated.");
-     setIsSubmitting(false);
-     setIsEditUserOpen(false);
+     try {
+       await usersApi.update(selectedUser.id, { role: selectedUser.role });
+       toast.success("User permissions updated.");
+       setIsEditUserOpen(false);
+       loadUsers();
+     } catch (err) {
+       toast.error("Failed to update user");
+     } finally {
+       setIsSubmitting(false);
+     }
   };
 
-  const handleDeleteUser = (id: number) => {
-    setUsers(prev => prev.filter(u => u.id !== id));
-    toast.success("User account deactivated.");
+  const handleResetPassword = async () => {
+    if (!newPassword) return toast.error("Please enter a new password");
+    setIsSubmitting(true);
+    try {
+      await usersApi.resetPassword(selectedUser.id, newPassword);
+      toast.success("Password reset successfully.");
+      setIsResetPasswordOpen(false);
+      setNewPassword("");
+    } catch (err) {
+      toast.error("Failed to reset password");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (id: number) => {
+    try {
+      await usersApi.delete(id);
+      setUsers(prev => prev.filter(u => u.id !== id));
+      toast.success("User account deactivated.");
+    } catch (err) {
+      toast.error("Failed to delete user");
+    }
   };
 
   const openEditModal = (user: any) => {
     setSelectedUser({ ...user });
     setIsEditUserOpen(true);
+  };
+
+  const openResetPasswordModal = (user: any) => {
+    setSelectedUser({ ...user });
+    setNewPassword("");
+    setIsResetPasswordOpen(true);
   };
 
   return (
@@ -150,23 +215,27 @@ export default function UserManagementPage() {
                 </DialogDescription>
               </div>
               <div className="p-8 space-y-6">
-                <div className="grid grid-cols-2 gap- Borser">
+                <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-1.5">
                       <Label htmlFor="fname" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">First Name</Label>
-                      <Input id="fname" placeholder="Jane" className="h-11 rounded-xl bg-muted/20 border-border/50" />
+                      <Input id="fname" value={newUser.firstName} onChange={(e) => setNewUser({...newUser, firstName: e.target.value})} placeholder="Jane" className="h-11 rounded-xl bg-muted/20 border-border/50" />
                    </div>
                    <div className="space-y-1.5">
                       <Label htmlFor="lname" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Last Name</Label>
-                      <Input id="lname" placeholder="Doe" className="h-11 rounded-xl bg-muted/20 border-border/50" />
+                      <Input id="lname" value={newUser.lastName} onChange={(e) => setNewUser({...newUser, lastName: e.target.value})} placeholder="Doe" className="h-11 rounded-xl bg-muted/20 border-border/50" />
                    </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
-                  <Input id="email" type="email" placeholder="jane.doe@smartflow.com" className="h-11 rounded-xl bg-muted/20 border-border/50" />
+                  <Input id="email" type="email" value={newUser.email} onChange={(e) => setNewUser({...newUser, email: e.target.value})} placeholder="jane.doe@smartflow.com" className="h-11 rounded-xl bg-muted/20 border-border/50" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="company" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company</Label>
+                  <Input id="company" value={newUser.companyName} onChange={(e) => setNewUser({...newUser, companyName: e.target.value})} placeholder="Company Inc." className="h-11 rounded-xl bg-muted/20 border-border/50" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Enterprise Role</Label>
-                  <Select>
+                  <Select value={newUser.role} onValueChange={(v) => setNewUser({...newUser, role: v})}>
                     <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-border/50">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
@@ -204,18 +273,6 @@ export default function UserManagementPage() {
             {selectedUser && (
                <div className="p-8 space-y-6">
                   <div className="space-y-1.5">
-                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Access Status</Label>
-                     <Select value={selectedUser.status} onValueChange={(v) => setSelectedUser({...selectedUser, status: v})}>
-                        <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-border/50">
-                           <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value="active">Active Access</SelectItem>
-                           <SelectItem value="inactive">Suspended</SelectItem>
-                        </SelectContent>
-                     </Select>
-                  </div>
-                  <div className="space-y-1.5">
                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Enterprise Role</Label>
                      <Select value={selectedUser.role} onValueChange={(v) => setSelectedUser({...selectedUser, role: v})}>
                         <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-border/50">
@@ -226,6 +283,7 @@ export default function UserManagementPage() {
                            <SelectItem value="MANAGER">Manager</SelectItem>
                            <SelectItem value="ACCOUNTANT">Sr. Accountant</SelectItem>
                            <SelectItem value="RECOVERY_AGENT">Recovery Agent</SelectItem>
+                           <SelectItem value="CLIENT">External Client</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -238,6 +296,31 @@ export default function UserManagementPage() {
                   </div>
                </div>
             )}
+         </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+         <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+            <div className="bg-primary/5 p-8 border-b">
+               <DialogTitle className="text-2xl font-black tracking-tight">Reset Password</DialogTitle>
+               <DialogDescription className="font-medium">
+                  Set a new password for <span className="text-foreground font-black">{selectedUser?.firstName} {selectedUser?.lastName}</span>
+               </DialogDescription>
+            </div>
+            <div className="p-8 space-y-6">
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">New Password</Label>
+                 <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="h-11 rounded-xl bg-muted/20 border-border/50" />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button variant="outline" className="flex-1 h-12 rounded-xl font-bold border-border bg-background" onClick={() => setIsResetPasswordOpen(false)}>Cancel</Button>
+                <Button className="flex-1 h-12 rounded-xl font-bold gap-2" onClick={handleResetPassword} disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                  Reset Password
+                </Button>
+              </div>
+            </div>
          </DialogContent>
       </Dialog>
 
@@ -308,10 +391,10 @@ export default function UserManagementPage() {
                     <TableCell className="pl-10 py-6">
                       <div className="flex items-center gap-4">
                         <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center font-black text-primary text-xs border border-primary/20 shadow-sm transition-transform group-hover:scale-110">
-                          {u.firstName[0]}{u.lastName[0]}
+                          {u.name ? u.name[0] : (u.firstName?.[0] || 'U')}{u.name ? u.name[1] || '' : (u.lastName?.[0] || '')}
                         </div>
                         <div className="flex flex-col">
-                           <span className="font-black text-sm tracking-tight">{u.firstName} {u.lastName}</span>
+                           <span className="font-black text-sm tracking-tight">{u.name || `${u.firstName || ''} ${u.lastName || ''}`}</span>
                            <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
                               <Mail className="h-3 w-3" />
                               {u.email}
@@ -352,6 +435,9 @@ export default function UserManagementPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem className="gap-3 py-2.5 px-3 rounded-xl focus:bg-primary/10 focus:text-primary transition-colors" onClick={() => openEditModal(u)}>
                             <Shield className="h-4 w-4" /> Adjust Permissions
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-3 py-2.5 px-3 rounded-xl focus:bg-primary/10 focus:text-primary transition-colors" onClick={() => openResetPasswordModal(u)}>
+                            <ShieldAlert className="h-4 w-4" /> Reset Password
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="my-1 opacity-50" />
                           <DropdownMenuItem 

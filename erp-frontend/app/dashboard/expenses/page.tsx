@@ -83,78 +83,9 @@ import { cn, formatDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { toast } from "sonner";
 
-const INITIAL_EXPENSES = [
-  {
-    id: "EXP-001",
-    description: "Office Supplies",
-    category: "operations",
-    vendor: "Office Depot",
-    amount: 245.5,
-    date: "2024-01-15",
-    status: "approved",
-    receipt: true,
-  },
-  {
-    id: "EXP-002",
-    description: "Software Subscription - Slack",
-    category: "software",
-    vendor: "Slack Technologies",
-    amount: 89.0,
-    date: "2024-01-12",
-    status: "approved",
-    receipt: true,
-  },
-  {
-    id: "EXP-003",
-    description: "Client Dinner Meeting",
-    category: "travel",
-    vendor: "The Capital Grille",
-    amount: 342.75,
-    date: "2024-01-10",
-    status: "pending",
-    receipt: true,
-  },
-  {
-    id: "EXP-004",
-    description: "Cloud Hosting - AWS",
-    category: "software",
-    vendor: "Amazon Web Services",
-    amount: 1250.0,
-    date: "2024-01-08",
-    status: "approved",
-    receipt: true,
-  },
-  {
-    id: "EXP-005",
-    description: "Team Building Event",
-    category: "payroll",
-    vendor: "Escape Room NYC",
-    amount: 450.0,
-    date: "2024-01-05",
-    status: "approved",
-    receipt: false,
-  },
-  {
-    id: "EXP-006",
-    description: "Office Rent - January",
-    category: "rent",
-    vendor: "WeWork",
-    amount: 3500.0,
-    date: "2024-01-01",
-    status: "approved",
-    receipt: true,
-  },
-  {
-    id: "EXP-007",
-    description: "Marketing Materials",
-    category: "operations",
-    vendor: "Vistaprint",
-    amount: 189.0,
-    date: "2024-01-14",
-    status: "rejected",
-    receipt: false,
-  },
-];
+import { expensesApi } from "@/lib/api";
+import { useEffect } from "react";
+
 
 const categoryConfig = {
   operations: { label: "Operations", icon: Package, color: "bg-blue-100 text-blue-700" },
@@ -172,27 +103,50 @@ const statusStyles = {
 
 export default function ExpensesPage() {
   const { formatCurrency } = useCurrency();
-  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadExpenses = async () => {
+    try {
+      setIsLoading(true);
+      const data = await expensesApi.getAll();
+      setExpenses(data);
+    } catch (err) {
+      toast.error("Failed to load expenses");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadExpenses();
+  }, []);
+
 
   // UI States
-  const [selectedExpense, setSelectedExpense] = useState<(typeof INITIAL_EXPENSES)[0] | null>(null);
-  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | number | null>(null);
 
-  const handleDeleteExpense = () => {
+  const handleDeleteExpense = async () => {
     if (!expenseToDelete) return;
-    setExpenses((prev) => prev.filter((e) => e.id !== expenseToDelete));
-    toast.success(`Expense ${expenseToDelete} has been deleted.`);
-    setExpenseToDelete(null);
+    try {
+      await expensesApi.delete(expenseToDelete as number);
+      setExpenses((prev) => prev.filter((e) => e.id !== expenseToDelete));
+      toast.success(`Expense has been deleted.`);
+      setExpenseToDelete(null);
+    } catch (err) {
+      toast.error("Failed to delete expense");
+    }
   };
 
   const filteredExpenses = expenses.filter((expense) => {
     const matchesSearch =
-      expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      expense.vendor.toLowerCase().includes(searchQuery.toLowerCase());
+      (expense.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (expense.vendor || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       categoryFilter === "all" || expense.category === categoryFilter;
     return matchesSearch && matchesCategory;
@@ -211,9 +165,22 @@ export default function ExpensesPage() {
 
   const handleAddExpense = async () => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setIsAddDialogOpen(false);
+    try {
+      await expensesApi.create({
+        description: "New Expense",
+        amount: 0,
+        category: "operations",
+        status: "pending",
+        date: new Date().toISOString().split("T")[0]
+      });
+      loadExpenses();
+      toast.success("Expense added successfully");
+      setIsAddDialogOpen(false);
+    } catch (err) {
+      toast.error("Failed to add expense");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

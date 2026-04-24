@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, FileText, Users, AlertTriangle, TrendingUp, TrendingDown, Building2, CheckCircle2, CreditCard } from "lucide-react";
+import { DollarSign, FileText, Users, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
-
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { analyticsApi, type AnalyticsSummary } from "@/lib/api";
 
 interface StatsCardsProps {
   role?: UserRole;
@@ -13,151 +15,80 @@ interface StatsCardsProps {
 
 export function StatsCards({ role }: StatsCardsProps) {
   const { formatCurrency } = useCurrency();
+  const [data, setData] = useState<AnalyticsSummary | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Define stats based on role
-  const getStatsByRole = (role?: UserRole) => {
-    const baseStats = [
-      {
-        name: "Total Revenue",
-        value: 124592.00,
-        isCurrency: true,
-        change: "+12.5%",
-        changeType: "positive" as const,
-        icon: DollarSign,
-        description: "vs last month",
-      },
-      {
-        name: "Outstanding Invoices",
-        value: 23450.00,
-        isCurrency: true,
-        change: "15 invoices",
-        changeType: "neutral" as const,
-        icon: FileText,
-        description: "pending payment",
-      },
-      {
-        name: "Active Clients",
-        value: 48,
-        isCurrency: false,
-        change: "+3",
-        changeType: "positive" as const,
-        icon: Users,
-        description: "new this month",
-      },
-      {
-        name: "Overdue Payments",
-        value: 8240.00,
-        isCurrency: true,
-        change: "6 invoices",
-        changeType: "negative" as const,
-        icon: AlertTriangle,
-        description: "require attention",
-      },
-    ];
+  useEffect(() => {
+    analyticsApi.getSummary()
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
-    if (role === "RECOVERY_AGENT") {
-      return [
-        {
-          name: "Debt Recovered",
-          value: 45000.00,
-          isCurrency: true,
-          change: "+RWF 1.2M",
-          changeType: "positive" as const,
-          icon: TrendingUp,
-          description: "this week",
-        },
-        {
-          name: "Active Cases",
-          value: 12,
-          isCurrency: false,
-          change: "3 new",
-          changeType: "neutral" as const,
-          icon: FileText,
-          description: "assigned to you",
-        },
-        {
-          name: "Recovery Rate",
-          value: 78,
-          isCurrency: false,
-          change: "+5%",
-          changeType: "positive" as const,
-          icon: CheckCircle2,
-          description: "average success",
-        },
-        {
-          name: "High Risk Amount",
-          value: 12400.00,
-          isCurrency: true,
-          change: "Action needed",
-          changeType: "negative" as const,
-          icon: AlertTriangle,
-          description: "urgent follow-up",
-        },
-      ];
-    }
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="pb-2"><Skeleton className="h-4 w-32" /></CardHeader>
+            <CardContent><Skeleton className="h-8 w-24 mb-2" /><Skeleton className="h-3 w-20" /></CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
-    if (role === "ACCOUNTANT") {
-      return [
+  const stats = data
+    ? [
         {
-          name: "Net Revenue",
-          value: 89000.00,
+          name: "Total Revenue",
+          value: data.totalRevenue,
           isCurrency: true,
-          change: "+8%",
+          change: `${data.paidInvoices} paid invoices`,
           changeType: "positive" as const,
           icon: DollarSign,
-          description: "post-tax estimate",
+          description: "lifetime collected",
         },
         {
-          name: "Tax Liability",
-          value: 14200.00,
+          name: "Outstanding Invoices",
+          value: data.outstandingInvoices,
           isCurrency: true,
-          change: "Due in 12 days",
+          change: `${data.pendingInvoices} invoices`,
           changeType: "neutral" as const,
-          icon: Building2,
-          description: "RWF equivalent",
+          icon: FileText,
+          description: "pending payment",
         },
         {
-          name: "Opex Total",
-          value: 23000.00,
-          isCurrency: true,
-          change: "+2%",
-          changeType: "negative" as const,
-          icon: TrendingDown,
-          description: "monthly operational",
-        },
-        {
-          name: "Payment Success",
-          value: 94.5,
+          name: "Active Clients",
+          value: data.activeClients,
           isCurrency: false,
-          change: "+0.5%",
+          change: "Registered",
           changeType: "positive" as const,
-          icon: CreditCard,
-          description: "gateway health",
+          icon: Users,
+          description: "in system",
         },
-      ];
-    }
-
-    return baseStats;
-  };
-
-  const currentStats = getStatsByRole(role);
+        {
+          name: "Overdue Amount",
+          value: data.overdueAmount,
+          isCurrency: true,
+          change: "Requires attention",
+          changeType: "negative" as const,
+          icon: AlertTriangle,
+          description: "past due date",
+        },
+      ]
+    : [];
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {currentStats.map((stat) => (
+      {stats.map((stat) => (
         <Card key={stat.name}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {stat.name}
-            </CardTitle>
-            <div className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg",
-              stat.changeType === "negative" ? "bg-destructive/10" : "bg-muted"
-            )}>
-              <stat.icon className={cn(
-                "h-5 w-5",
-                stat.changeType === "negative" ? "text-destructive" : "text-muted-foreground"
-              )} />
+            <CardTitle className="text-sm font-medium text-muted-foreground">{stat.name}</CardTitle>
+            <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg",
+              stat.changeType === "negative" ? "bg-destructive/10" : "bg-muted")}>
+              <stat.icon className={cn("h-5 w-5",
+                stat.changeType === "negative" ? "text-destructive" : "text-muted-foreground")} />
             </div>
           </CardHeader>
           <CardContent>
@@ -165,25 +96,15 @@ export function StatsCards({ role }: StatsCardsProps) {
               {stat.isCurrency ? formatCurrency(stat.value as number) : stat.value}
             </div>
             <div className="flex items-center gap-1 mt-1">
-              {stat.changeType === "positive" && (
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              )}
-              {stat.changeType === "negative" && (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
-              <span
-                className={cn(
-                  "text-sm",
-                  stat.changeType === "positive" && "text-green-600",
-                  stat.changeType === "negative" && "text-destructive",
-                  stat.changeType === "neutral" && "text-muted-foreground"
-                )}
-              >
+              {stat.changeType === "positive" && <TrendingUp className="h-4 w-4 text-green-600" />}
+              {stat.changeType === "negative" && <TrendingDown className="h-4 w-4 text-destructive" />}
+              <span className={cn("text-sm",
+                stat.changeType === "positive" && "text-green-600",
+                stat.changeType === "negative" && "text-destructive",
+                stat.changeType === "neutral" && "text-muted-foreground")}>
                 {stat.change}
               </span>
-              <span className="text-sm text-muted-foreground">
-                {stat.description}
-              </span>
+              <span className="text-sm text-muted-foreground">{stat.description}</span>
             </div>
           </CardContent>
         </Card>

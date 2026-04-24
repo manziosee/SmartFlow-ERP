@@ -1,0 +1,289 @@
+/**
+ * SmartFlow ERP — Centralized API Service Layer
+ * All API calls go through this file. Never use fetch() directly in components.
+ */
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+const AI_URL = process.env.NEXT_PUBLIC_AI_API_URL!;
+const RULES_URL = process.env.NEXT_PUBLIC_RULES_API_URL!;
+
+// ─── Auth Header Helper ────────────────────────────────────────────────────
+function getAuthHeaders(): HeadersInit {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+// ─── Generic Fetch Wrapper ─────────────────────────────────────────────────
+async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...getAuthHeaders(), ...(options.headers ?? {}) },
+  });
+  
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
+    }
+    const err = await res.text();
+    throw new Error(err || `HTTP ${res.status}`);
+  }
+  
+  // 204 No Content
+  if (res.status === 204) return null as T;
+  return res.json();
+}
+
+// ─── TYPES ─────────────────────────────────────────────────────────────────
+export interface AuthResponse {
+  token: string;
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export interface Invoice {
+  id: number;
+  client: { id: number; name: string; email: string };
+  amount: number;
+  status: string;
+  issueDate: string;
+  dueDate: string;
+}
+
+export interface Client {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  riskIndex?: number;
+  averagePaymentDelayDays?: number;
+}
+
+export interface Payment {
+  id: number;
+  invoice: Invoice;
+  amount: number;
+  paymentDate: string;
+  method: string;
+}
+
+export interface Expense {
+  id: number;
+  description: string;
+  amount: number;
+  category: string;
+  status: string;
+  date: string;
+  submittedBy?: string;
+}
+
+export interface Notification {
+  id: number;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface AuditLog {
+  id: number;
+  action: string;
+  entityType: string;
+  entityId: string;
+  performedBy: string;
+  timestamp: string;
+}
+
+export interface AnalyticsSummary {
+  totalRevenue: number;
+  outstandingInvoices: number;
+  activeClients: number;
+  overdueAmount: number;
+  paidInvoices: number;
+  pendingInvoices: number;
+}
+
+export interface CashflowEntry {
+  period: string;
+  inflow: number;
+  outflow: number;
+  net: number;
+}
+
+export interface AiInsight {
+  type: string;
+  priority: string;
+  title: string;
+  description: string;
+  targetId?: string;
+}
+
+export interface CashflowForecast {
+  period: string;
+  projected_inflow: number;
+  projected_outflow: number;
+  net_cashflow: number;
+  confidence: number;
+}
+
+export interface RecoveryCase {
+  id: number;
+  invoice: Invoice;
+  status: string;
+  assignedAgent?: string;
+  notes?: string;
+  initiatedAt: string;
+}
+
+// ─── AUTH ──────────────────────────────────────────────────────────────────
+export const authApi = {
+  login: (email: string, password: string) =>
+    apiFetch<AuthResponse>(`${API_URL}/auth/login`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  register: (data: { name: string; email: string; password: string; company?: string }) =>
+    apiFetch<AuthResponse>(`${API_URL}/auth/register`, {
+      method: "POST",
+      body: JSON.stringify({ ...data, role: "CLIENT" }),
+    }),
+};
+
+// ─── ANALYTICS ────────────────────────────────────────────────────────────
+export const analyticsApi = {
+  getSummary: () => apiFetch<AnalyticsSummary>(`${API_URL}/analytics/summary`),
+  getCashflow: () => apiFetch<CashflowEntry[]>(`${API_URL}/analytics/cashflow`),
+};
+
+// ─── INVOICES ─────────────────────────────────────────────────────────────
+export const invoicesApi = {
+  getAll: () => apiFetch<Invoice[]>(`${API_URL}/invoices`),
+  getById: (id: number | string) => apiFetch<any>(`${API_URL}/invoices/${id}`),
+  create: (data: Partial<Invoice>) =>
+    apiFetch<Invoice>(`${API_URL}/invoices`, { method: "POST", body: JSON.stringify(data) }),
+  sendReminder: (id: number) =>
+    apiFetch<void>(`${API_URL}/invoices/${id}/remind`, { method: "POST" }),
+};
+
+// ─── CLIENTS ──────────────────────────────────────────────────────────────
+export const clientsApi = {
+  getAll: () => apiFetch<Client[]>(`${API_URL}/clients`),
+  getById: (id: number) => apiFetch<Client>(`${API_URL}/clients/${id}`),
+  create: (data: Partial<Client>) =>
+    apiFetch<Client>(`${API_URL}/clients`, { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<Client>) =>
+    apiFetch<Client>(`${API_URL}/clients/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+};
+
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────
+export const paymentsApi = {
+  getAll: () => apiFetch<Payment[]>(`${API_URL}/payments`),
+  create: (data: { invoiceId: number; amount: number; method: string }) =>
+    apiFetch<Payment>(`${API_URL}/payments`, { method: "POST", body: JSON.stringify(data) }),
+};
+
+// ─── EXPENSES ─────────────────────────────────────────────────────────────
+export const expensesApi = {
+  getAll: () => apiFetch<Expense[]>(`${API_URL}/expenses`),
+  getById: (id: number | string) => apiFetch<Expense>(`${API_URL}/expenses/${id}`),
+  create: (data: Partial<Expense>) =>
+    apiFetch<Expense>(`${API_URL}/expenses`, { method: "POST", body: JSON.stringify(data) }),
+  delete: (id: number) => apiFetch<void>(`${API_URL}/expenses/${id}`, { method: "DELETE" }),
+};
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────
+export const notificationsApi = {
+  getAll: () => apiFetch<Notification[]>(`${API_URL}/notifications`),
+  markRead: (id: number) =>
+    apiFetch<void>(`${API_URL}/notifications/${id}/read`, { method: "PATCH" }),
+};
+
+// ─── AUDIT LOGS ───────────────────────────────────────────────────────────
+export const auditApi = {
+  getAll: () => apiFetch<AuditLog[]>(`${API_URL}/audit`),
+};
+
+// ─── RECOVERY ─────────────────────────────────────────────────────────────
+export const recoveryApi = {
+  getAll: () => apiFetch<RecoveryCase[]>(`${API_URL}/recovery`),
+  initiate: (invoiceId: number) =>
+    apiFetch<RecoveryCase>(`${API_URL}/recovery/${invoiceId}/initiate`, { method: "POST" }),
+  updateStatus: (id: number, status: string) =>
+    apiFetch<RecoveryCase>(`${API_URL}/recovery/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  addNote: (id: number, note: string) =>
+    apiFetch<RecoveryCase>(`${API_URL}/recovery/${id}/notes`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    }),
+};
+
+// ─── MARKETPLACE ──────────────────────────────────────────────────────────
+export const marketplaceApi = {
+  getOffers: () => apiFetch<any[]>(`${API_URL}/marketplace/offers`),
+};
+
+// ─── AI SERVICE ───────────────────────────────────────────────────────────
+export const aiApi = {
+  getInsights: (role = "MANAGER") =>
+    apiFetch<AiInsight[]>(`${AI_URL}/insights?role=${role}`),
+  getPeerComparison: (clientId: number) =>
+    apiFetch<any>(`${AI_URL}/peer-comparison?client_id=${clientId}`),
+  predictPayment: (data: any) =>
+    apiFetch<any>(`${AI_URL}/predict-payment`, { method: "POST", body: JSON.stringify(data) }),
+  analyzeRisk: (invoiceId: number, amount: number, daysOverdue: number, riskIndex: number) =>
+    apiFetch<{ risk_score: number }>(`${AI_URL}/risk/${invoiceId}?amount=${amount}&days_overdue=${daysOverdue}&client_risk_index=${riskIndex}`),
+  getCashflowForecast: () =>
+    apiFetch<CashflowForecast[]>(`${AI_URL}/forecast/cashflow`),
+  categorizeExpense: (description: string, amount: number) =>
+    apiFetch<{ category: string; confidence: number }>(`${AI_URL}/categorize-expense`, {
+      method: "POST",
+      body: JSON.stringify({ description, amount }),
+    }),
+};
+
+// ─── RULES ENGINE ─────────────────────────────────────────────────────────
+export const rulesApi = {
+  calculateAllocation: (paymentAmount: number, invoices: any[]) =>
+    apiFetch<any>(`${RULES_URL}/allocate`, {
+      method: "POST",
+      body: JSON.stringify({ payment_amount: paymentAmount, invoices }),
+    }),
+  getMarketplaceRecs: (profile: any) =>
+    apiFetch<any[]>(`${RULES_URL}/marketplace`, {
+      method: "POST",
+      body: JSON.stringify(profile),
+    }),
+  reconcile: (entry: any, invoices: any[]) =>
+    apiFetch<any[]>(`${RULES_URL}/reconcile`, {
+      method: "POST",
+      body: JSON.stringify({ entry, invoices }),
+    }),
+  calculateLateFees: (invoice: any) =>
+    apiFetch<{ late_fee: number }>(`${RULES_URL}/late-fees`, {
+      method: "POST",
+      body: JSON.stringify(invoice),
+    }),
+};
+
+// ─── USERS ─────────────────────────────────────────────────────────────────
+export const usersApi = {
+  getAll: () => apiFetch<any[]>(`${API_URL}/users`),
+  create: (data: any) => apiFetch<any>(`${API_URL}/users`, { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string | number, data: any) => apiFetch<any>(`${API_URL}/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id: string | number) => apiFetch<void>(`${API_URL}/users/${id}`, { method: "DELETE" }),
+  resetPassword: (id: string | number, newPassword: string) => apiFetch<void>(`${API_URL}/users/${id}/reset-password`, { method: "POST", body: JSON.stringify({ newPassword }) }),
+};

@@ -52,13 +52,9 @@ interface Attachment {
   type: "pdf" | "image" | "other";
 }
 
-const clients = [
-  { id: "1", name: "Acme Corporation", email: "billing@acme.com" },
-  { id: "2", name: "Tech Solutions Inc.", email: "accounts@techsolutions.com" },
-  { id: "3", name: "Global Dynamics", email: "finance@globaldynamics.com" },
-  { id: "4", name: "StartUp Labs", email: "hello@startuplabs.io" },
-  { id: "5", name: "Digital Ventures", email: "pay@digitalventures.co" },
-];
+import { clientsApi, invoicesApi } from "@/lib/api";
+import { useEffect } from "react";
+
 
 const currencies = [
   { code: "USD", symbol: "$", name: "US Dollar", rate: 1 },
@@ -81,6 +77,11 @@ export default function NewInvoicePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<"draft" | "send" | null>(null);
   const [currency, setCurrency] = useState("USD");
+  const [clients, setClients] = useState<any[]>([]);
+
+  useEffect(() => {
+    clientsApi.getAll().then(setClients).catch(console.error);
+  }, []);
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: 1, description: "", quantity: 1, rate: 0 },
   ]);
@@ -156,8 +157,13 @@ export default function NewInvoicePage() {
   const handleSubmit = async (e: React.FormEvent, action: "draft" | "send") => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitAction(action);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await invoicesApi.create({
+      client: { id: parseInt(formData.clientId), name: "", email: "" },
+      amount: total,
+      status: action === "send" ? "pending" : "draft",
+      issueDate: formData.issueDate,
+      dueDate: formData.dueDate || formData.issueDate,
+    });
     setIsSubmitting(false);
     setSubmitAction(null);
     router.push("/dashboard/invoices");
@@ -232,7 +238,7 @@ export default function NewInvoicePage() {
                     </SelectTrigger>
                     <SelectContent>
                       {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
+                        <SelectItem key={client.id} value={client.id.toString()}>
                           <div className="flex flex-col">
                             <span>{client.name}</span>
                             <span className="text-xs text-muted-foreground">{client.email}</span>
