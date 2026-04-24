@@ -44,7 +44,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 import { expensesApi, invoicesApi } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 
 export default function AccountingPage() {

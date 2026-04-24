@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 
 import { analyticsApi, expensesApi, invoicesApi } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 
 export default function ReportsPage() {
