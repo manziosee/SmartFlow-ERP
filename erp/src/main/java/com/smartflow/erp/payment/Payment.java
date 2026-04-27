@@ -35,10 +35,18 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Status status = Status.COMPLETED;
+
     @Builder.Default
     private LocalDateTime paymentDate = LocalDateTime.now();
 
     public enum PaymentMethod {
         BANK_TRANSFER, CREDIT_CARD, STRIPE, CASH
+    }
+
+    public enum Status {
+        COMPLETED, PENDING, FAILED
     }
 }

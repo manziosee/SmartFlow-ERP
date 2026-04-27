@@ -12,10 +12,21 @@ import java.util.List;
 public class ProductController {
 
     private final ProductRepository productRepository;
+    private final StockMovementRepository stockMovementRepository;
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productRepository.findAll());
+    }
+
+    @GetMapping("/ledger")
+    public ResponseEntity<List<StockMovement>> getLedger() {
+        return ResponseEntity.ok(stockMovementRepository.findAllByOrderByTimestampDesc());
+    }
+
+    @GetMapping("/{id}/ledger")
+    public ResponseEntity<List<StockMovement>> getProductLedger(@PathVariable Long id) {
+        return ResponseEntity.ok(stockMovementRepository.findByProductIdOrderByTimestampDesc(id));
     }
 
     @GetMapping("/{id}")

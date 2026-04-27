@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import { NavIcons } from "@/components/ui/logo";
 import { toast } from "sonner";
 
+import { aiApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+
 interface InsightData {
   type: string;
   priority: string;
@@ -30,25 +33,23 @@ const priorityStyles = {
 };
 
 export function AIInsights() {
+  const { user } = useAuth();
   const [insights, setInsights] = useState<InsightData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchInsights() {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AI_API_URL}/insights`);
-        if (!response.ok) throw new Error("Failed to fetch AI insights");
-        const data = await response.json();
+        const data = await aiApi.getInsights(user?.role || "MANAGER");
         setInsights(data);
       } catch (error) {
         console.error("AI Insight Error:", error);
-        // Fallback or error message
       } finally {
         setLoading(false);
       }
     }
     fetchInsights();
-  }, []);
+  }, [user]);
 
   return (
     <Card className="col-span-4 rounded-[2rem] border-none shadow-xl overflow-hidden">

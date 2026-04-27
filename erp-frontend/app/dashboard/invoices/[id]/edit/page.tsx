@@ -148,7 +148,7 @@ export default function EditInvoicePage() {
   }
 
   return (
-    <div className="space-y-8 pb-12 font-geist">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
@@ -158,7 +158,7 @@ export default function EditInvoicePage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Edit Record</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Edit Record</h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                Modifying <span className="text-foreground font-bold">{formData.invoiceNumber}</span>
             </p>
@@ -174,9 +174,9 @@ export default function EditInvoicePage() {
       <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
         {/* Main Section */}
         <div className="lg:col-span-2 space-y-8">
-          <Card className="rounded-[2.5rem] border-border/50 shadow-none overflow-hidden">
+          <Card className="rounded-2xl border-border/50 shadow-none overflow-hidden">
             <CardHeader className="bg-muted/30 p-8 border-b">
-               <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+               <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
                   <FileText className="h-6 w-6 text-primary" />
                   Primary Details
                </CardTitle>
@@ -184,7 +184,7 @@ export default function EditInvoicePage() {
             <CardContent className="p-8 space-y-6">
                <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Client Entity</Label>
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Client Entity</Label>
                     <Select value={formData.clientId} onValueChange={(v) => setFormData({...formData, clientId: v})}>
                        <SelectTrigger className="h-12 rounded-2xl border-border/50 bg-muted/20">
                           <SelectValue placeholder="Select client" />
@@ -195,17 +195,17 @@ export default function EditInvoicePage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Reference No.</Label>
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Reference No.</Label>
                     <Input value={formData.invoiceNumber} readOnly className="h-12 rounded-2xl bg-muted/30 font-mono font-bold" />
                   </div>
                </div>
                <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Issue Date</Label>
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Issue Date</Label>
                     <Input type="date" value={formData.issueDate} onChange={e => setFormData({...formData, issueDate: e.target.value})} className="h-12 rounded-2xl bg-muted/10 border-border/50" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Terms (Due Date)</Label>
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Terms (Due Date)</Label>
                     <Input type="date" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="h-12 rounded-2xl bg-muted/10 border-border/50" />
                   </div>
                </div>
@@ -213,25 +213,25 @@ export default function EditInvoicePage() {
           </Card>
 
           {/* Line Items Portal */}
-          <Card className="rounded-[2.5rem] border-border/50 shadow-none overflow-hidden">
-             <CardHeader className="p-8 pb-4">
-                <CardTitle className="text-xl font-black">Line Items</CardTitle>
+          <Card className="rounded-2xl border-border/50 shadow-none overflow-hidden">
+             <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xl font-bold">Line Items</CardTitle>
                 <CardDescription>Adjust quantity and rates for consulting hours</CardDescription>
              </CardHeader>
              <CardContent className="p-8 pt-4 space-y-6">
                 {lineItems.map((item, idx) => (
                    <div key={item.id} className="grid grid-cols-12 gap-4 items-end bg-muted/10 p-4 rounded-3xl border border-border/20">
                       <div className="col-span-6 space-y-2">
-                         <Label className="text-[10px] font-black italic">Description</Label>
+                         <Label className="text-[10px] font-bold italic">Description</Label>
                          <Input value={item.description} onChange={e => updateLineItem(item.id, 'description', e.target.value)} className="h-11 rounded-xl bg-background" />
                       </div>
                       <div className="col-span-2 space-y-2">
-                         <Label className="text-[10px] font-black italic text-center block">Qty</Label>
+                         <Label className="text-[10px] font-bold italic text-center block">Qty</Label>
                          <Input type="number" value={item.quantity} onChange={e => updateLineItem(item.id, 'quantity', parseInt(e.target.value))} className="h-11 rounded-xl bg-background text-center" />
                       </div>
                       <div className="col-span-3 space-y-2">
-                         <Label className="text-[10px] font-black italic text-right block">Rate</Label>
-                         <Input type="number" value={item.rate} onChange={e => updateLineItem(item.id, 'rate', parseInt(e.target.value))} className="h-11 rounded-xl bg-background text-right font-black" />
+                         <Label className="text-[10px] font-bold italic text-right block">Rate</Label>
+                         <Input type="number" value={item.rate} onChange={e => updateLineItem(item.id, 'rate', parseInt(e.target.value))} className="h-11 rounded-xl bg-background text-right font-bold" />
                       </div>
                       <div className="col-span-1 flex justify-end pb-1 text-red-400 hover:text-red-600 transition-colors">
                          <Trash2 className="h-5 w-5 cursor-pointer" onClick={() => setLineItems(lineItems.filter(li => li.id !== item.id))} />
@@ -247,9 +247,9 @@ export default function EditInvoicePage() {
         </div>
 
         {/* Sidebar Summary */}
-        <div className="space-y-8">
-           <Card className="rounded-[2.5rem] border-border/50 shadow-xl shadow-primary/5 p-8 sticky top-24">
-              <h3 className="text-lg font-black uppercase tracking-widest mb-6 border-b pb-4">Financial Ledger</h3>
+        <div className="space-y-6">
+           <Card className="rounded-2xl border-border/50 shadow-xl shadow-primary/5 p-8 sticky top-24">
+              <h3 className="text-lg font-bold uppercase tracking-widest mb-6 border-b pb-4">Financial Ledger</h3>
               <div className="space-y-4">
                  <div className="flex justify-between items-center text-sm font-medium">
                     <span className="text-muted-foreground uppercase text-[10px] font-extrabold tracking-widest">Gross Subtotal</span>
@@ -263,14 +263,14 @@ export default function EditInvoicePage() {
                  </div>
                  <div className="pt-6 border-t mt-4">
                     <div className="flex justify-between items-end">
-                       <span className="text-xs font-black uppercase tracking-widest text-primary">Revised Total</span>
-                       <span className="text-3xl font-black tracking-tighter text-foreground">{total.toLocaleString()} FRw</span>
+                       <span className="text-xs font-bold uppercase tracking-widest text-primary">Revised Total</span>
+                       <span className="text-3xl font-bold tracking-tight text-foreground">{total.toLocaleString()} FRw</span>
                     </div>
                  </div>
               </div>
 
               <div className="mt-10 space-y-3">
-                 <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg gap-2 shadow-lg shadow-primary/30" disabled={isSubmitting}>
+                 <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg gap-2 shadow-lg shadow-primary/30" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                     Confirm Revision
                  </Button>

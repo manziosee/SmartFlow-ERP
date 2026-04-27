@@ -1,5 +1,7 @@
 package com.smartflow.erp.config;
 
+import com.smartflow.erp.tax.TaxRule;
+import com.smartflow.erp.tax.TaxRuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

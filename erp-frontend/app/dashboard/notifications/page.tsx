@@ -134,7 +134,7 @@ export default function NotificationsPage() {
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
               {unreadCount > 0 && (
                 <Badge className="bg-red-500 text-white">
                   {unreadCount} new

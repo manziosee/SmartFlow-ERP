@@ -108,7 +108,7 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
           <p className="text-muted-foreground">Manage your client relationships and contacts</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -300,11 +300,11 @@ export default function ClientsPage() {
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
           <DialogHeader className="bg-primary p-8 text-primary-foreground">
             <div className="flex items-center gap-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary-foreground text-primary text-3xl font-black shadow-lg">
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary-foreground text-primary text-3xl font-bold shadow-lg">
                 {selectedClient?.name?.split(" ").map(n => n[0]).join("").slice(0, 2)}
               </div>
               <div className="space-y-1 text-left">
-                <DialogTitle className="text-2xl font-black">{selectedClient?.name}</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">{selectedClient?.name}</DialogTitle>
                 <DialogDescription className="font-bold text-primary-foreground/80 flex items-center gap-2">
                   <Building className="h-4 w-4" />{selectedClient?.company ?? "Independent"}
                 </DialogDescription>
@@ -314,7 +314,7 @@ export default function ClientsPage() {
           {selectedClient && (
             <div className="p-8 space-y-6 font-geist max-h-[70vh] overflow-y-auto">
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <p className="text-sm font-medium text-muted-foreground text-muted-foreground flex items-center gap-2">
                   <User className="h-3 w-3" /> Contact Details
                 </p>
                 <div className="grid gap-3">
@@ -323,7 +323,7 @@ export default function ClientsPage() {
                       <Mail className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-muted-foreground uppercase">Email</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Email</p>
                       <p className="font-bold text-sm">{selectedClient.email}</p>
                     </div>
                   </div>
@@ -333,7 +333,7 @@ export default function ClientsPage() {
                         <Phone className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase">Phone</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Phone</p>
                         <p className="font-bold text-sm">{selectedClient.phone}</p>
                       </div>
                     </div>
@@ -348,12 +348,12 @@ export default function ClientsPage() {
               {selectedClient.riskIndex !== undefined && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl border text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase font-black">Risk Index</p>
-                    <p className="text-xl font-black">{selectedClient.riskIndex}/10</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Risk Index</p>
+                    <p className="text-xl font-bold">{selectedClient.riskIndex}/10</p>
                   </div>
                   <div className="p-4 rounded-2xl border text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase font-black">Avg Delay</p>
-                    <p className="text-xl font-black">{selectedClient.averagePaymentDelayDays ?? 0} days</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Avg Delay</p>
+                    <p className="text-xl font-bold">{selectedClient.averagePaymentDelayDays ?? 0} days</p>
                   </div>
                 </div>
               )}

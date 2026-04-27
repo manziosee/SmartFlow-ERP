@@ -75,7 +75,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
           Manage your account and application preferences
         </p>
@@ -459,12 +459,12 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="p-4 rounded-xl border bg-muted/20">
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Primary DB (Neon)</p>
-                     <p className="text-3xl font-black">{backupStats?.primaryDbSizeMB || 0} MB</p>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Primary DB (Neon)</p>
+                     <p className="text-3xl font-bold">{backupStats?.primaryDbSizeMB || 0} MB</p>
                   </div>
                   <div className="p-4 rounded-xl border bg-muted/20">
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Secondary DB (Turso)</p>
-                     <p className="text-3xl font-black">{backupStats?.secondaryDbSizeMB || 0} MB</p>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Secondary DB (Turso)</p>
+                     <p className="text-3xl font-bold">{backupStats?.secondaryDbSizeMB || 0} MB</p>
                   </div>
                 </div>
 

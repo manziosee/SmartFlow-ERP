@@ -108,7 +108,7 @@ export default function EditClientPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12 font-geist">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
@@ -118,7 +118,7 @@ export default function EditClientPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Edit Client</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Edit Client</h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                Managing profile for <span className="text-foreground font-bold">{formData.name}</span>
             </p>
@@ -129,9 +129,9 @@ export default function EditClientPage() {
       <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3 text-balance">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
-           <Card className="rounded-[2.5rem] border-border/50 shadow-none overflow-hidden">
+           <Card className="rounded-2xl border-border/50 shadow-none overflow-hidden">
               <CardHeader className="bg-muted/30 p-8 border-b">
-                 <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+                 <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
                     <Building2 className="h-6 w-6 text-primary" />
                     Company Information
                  </CardTitle>
@@ -139,25 +139,25 @@ export default function EditClientPage() {
               <CardContent className="p-8 space-y-6">
                  <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Legal Entity Name</Label>
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Legal Entity Name</Label>
                        <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-12 rounded-2xl border-border/50 bg-muted/20 placeholder:italic" placeholder="e.g. Acme Corporation" />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Trade/Alias Name</Label>
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Trade/Alias Name</Label>
                        <Input value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="h-12 rounded-2xl border-border/50 bg-muted/20" />
                     </div>
                  </div>
 
                  <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                           <Mail className="h-3 w-3" />
                           Billing Email
                        </Label>
                        <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="h-12 rounded-2xl border-border/50 bg-muted/20" />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                           <Phone className="h-3 w-3" />
                           Primary Contact Phone
                        </Label>
@@ -166,7 +166,7 @@ export default function EditClientPage() {
                  </div>
 
                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                        <MapPin className="h-3 w-3" />
                        Registered Address
                     </Label>
@@ -176,15 +176,15 @@ export default function EditClientPage() {
            </Card>
 
            {/* Financial Context */}
-           <Card className="rounded-[2.5rem] border-border/50 shadow-none overflow-hidden">
-              <CardHeader className="p-8 pb-4">
-                 <CardTitle className="text-xl font-black">Account Context</CardTitle>
+           <Card className="rounded-2xl border-border/50 shadow-none overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                 <CardTitle className="text-xl font-bold">Account Context</CardTitle>
                  <CardDescription>Administrative flags and financial standing</CardDescription>
               </CardHeader>
               <CardContent className="p-8 pt-4">
                  <div className="grid gap-6 md:grid-cols-3">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Account Status</Label>
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Account Status</Label>
                        <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
                           <SelectTrigger className="h-12 rounded-2xl border-border/50">
                              <SelectValue />
@@ -198,8 +198,8 @@ export default function EditClientPage() {
                     </div>
                     <div className="col-span-2 p-6 rounded-3xl bg-muted/20 flex items-center justify-between border border-dashed border-border/50">
                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Lifetime Revenue</span>
-                          <span className="text-2xl font-black text-foreground">{formatCurrency(formData.totalInvoiced)}</span>
+                          <span className="text-sm font-medium text-muted-foreground text-muted-foreground italic">Lifetime Revenue</span>
+                          <span className="text-2xl font-bold text-foreground">{formatCurrency(formData.totalInvoiced)}</span>
                        </div>
                        <TrendingUp className="h-8 w-8 text-emerald-500/30" />
                     </div>
@@ -207,7 +207,7 @@ export default function EditClientPage() {
 
                  <div className="grid gap-6 md:grid-cols-2 mt-8">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
                           <DollarSign className="h-3 w-3" />
                           Monthly Retainer Rate
                        </Label>
@@ -215,12 +215,12 @@ export default function EditClientPage() {
                          type="number" 
                          value={formData.monthlyRate} 
                          onChange={e => setFormData({...formData, monthlyRate: parseFloat(e.target.value) || 0})} 
-                         className="h-12 rounded-2xl border-primary/20 bg-primary/5 font-black text-primary text-lg" 
+                         className="h-12 rounded-2xl border-primary/20 bg-primary/5 font-bold text-primary text-lg" 
                        />
                        <p className="text-[10px] text-muted-foreground italic font-medium">Used for automatic end-of-month invoice generation.</p>
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-2">
                           <CalendarDays className="h-3 w-3" />
                           Preferred Billing Day
                        </Label>
@@ -239,12 +239,12 @@ export default function EditClientPage() {
         </div>
 
         {/* Action Sidebar */}
-        <div className="space-y-8">
-           <Card className="rounded-[2.5rem] border-border/50 shadow-xl shadow-primary/5 p-8 sticky top-24">
-              <h3 className="text-lg font-black uppercase tracking-widest mb-6 border-b pb-4">CRM Control</h3>
+        <div className="space-y-6">
+           <Card className="rounded-2xl border-border/50 shadow-xl shadow-primary/5 p-8 sticky top-24">
+              <h3 className="text-lg font-bold uppercase tracking-widest mb-6 border-b pb-4">CRM Control</h3>
               <div className="space-y-6">
                  <div className="flex flex-col gap-4">
-                    <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg gap-2 shadow-lg shadow-primary/30" disabled={isSubmitting}>
+                    <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg gap-2 shadow-lg shadow-primary/30" disabled={isSubmitting}>
                        {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                        Commit Changes
                     </Button>
@@ -257,14 +257,14 @@ export default function EditClientPage() {
                     <div className="flex items-center gap-3 p-4 rounded-2x border border-border/50 bg-muted/10">
                        <ShieldCheck className="h-5 w-5 text-emerald-600" />
                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-tight">Identity Verification</span>
+                          <span className="text-[10px] font-bold uppercase tracking-tight">Identity Verification</span>
                           <span className="text-xs text-muted-foreground font-medium">No flagged issues found</span>
                        </div>
                     </div>
                     <div className="flex items-center gap-3 p-4 rounded-2x border border-border/50 bg-muted/10">
                        <CreditCard className="h-5 w-5 text-indigo-600" />
                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-tight">Payment Health</span>
+                          <span className="text-[10px] font-bold uppercase tracking-tight">Payment Health</span>
                           <span className="text-xs text-muted-foreground font-medium">92% collection rate</span>
                        </div>
                     </div>

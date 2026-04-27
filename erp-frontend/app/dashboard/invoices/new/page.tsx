@@ -77,7 +77,7 @@ const paymentTerms = [
 export default function NewInvoicePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitAction, setSubmitAction] = useState<"draft" | "send" | null>(null);
+  const [submitAction, setSubmitAction] = useState<"draft" | "send" | "create" | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [clients, setClients] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -168,7 +168,7 @@ export default function NewInvoicePage() {
       }));
   }, [total, currency, currentCurrency.rate]);
 
-  const handleSubmit = async (e: React.FormEvent, action: "draft" | "send") => {
+  const handleSubmit = async (e: React.FormEvent, action: "draft" | "send" | "create") => {
     e.preventDefault();
     setSubmitAction(action);
     setIsSubmitting(true);
@@ -176,7 +176,7 @@ export default function NewInvoicePage() {
       invoiceNumber: formData.invoiceNumber,
       client: { id: parseInt(formData.clientId), name: "", email: "" },
       amount: total,
-      status: action === "send" ? "pending" : "draft",
+      status: action === "send" ? "SENT" : action === "create" ? "PENDING" : "DRAFT",
       issueDate: formData.issueDate,
       dueDate: formData.dueDate || formData.issueDate,
       items: lineItems.map(item => ({
@@ -214,7 +214,7 @@ export default function NewInvoicePage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Create Invoice</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Create Invoice</h1>
             <p className="text-muted-foreground">
               Fill in the details to create a new invoice
             </p>
@@ -641,6 +641,24 @@ export default function NewInvoicePage() {
                     <>
                       <Send className="h-4 w-4" />
                       Create & Send Invoice
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="w-full gap-2 font-bold"
+                  onClick={(e) => handleSubmit(e, "create")}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && submitAction === "create" ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      Create Invoice
                     </>
                   )}
                 </Button>

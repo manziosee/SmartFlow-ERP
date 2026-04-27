@@ -27,7 +27,7 @@ export default function DashboardLayout({
             sidebarCollapsed ? "pl-16" : "pl-64"
           )}
         >
-          <div className="p-6">{children}</div>
+          <div className="px-6 pt-6 pb-2">{children}</div>
         </main>
       </div>
     </CurrencyProvider>

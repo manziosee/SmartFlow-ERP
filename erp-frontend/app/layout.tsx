@@ -26,11 +26,13 @@ export const metadata: Metadata = {
   },
 }
 
+import { Outfit } from 'next/font/google';
 import { AuthProvider } from "@/contexts/AuthContext";
 
-import { Outfit } from 'next/font/google'
-
-const outfit = Outfit({ subsets: ['latin'] })
+const outfit = Outfit({ 
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
 export default function RootLayout({
   children,
@@ -38,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background" suppressHydrationWarning>
-      <body className={`${outfit.className} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${outfit.variable} bg-background`} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}

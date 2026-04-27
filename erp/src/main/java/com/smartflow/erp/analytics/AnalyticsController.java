@@ -2,12 +2,11 @@ package com.smartflow.erp.analytics;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,12 +17,12 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
 
     @GetMapping("/summary")
-    public ResponseEntity<Map<String, Object>> getSummary() {
-        return ResponseEntity.ok(analyticsService.getFinancialSummary());
+    public ResponseEntity<Map<String, Object>> getSummary(@RequestParam(required = false) String period) {
+        return ResponseEntity.ok(analyticsService.getFinancialSummary(period));
     }
 
     @GetMapping("/cashflow")
-    public ResponseEntity<Map<String, BigDecimal>> getCashflowForecast() {
-        return ResponseEntity.ok(analyticsService.getCashflowForecast());
+    public ResponseEntity<List<Map<String, Object>>> getCashflowForecast(@RequestParam(required = false) String period) {
+        return ResponseEntity.ok(analyticsService.getCashflowForecast(period));
     }
 }

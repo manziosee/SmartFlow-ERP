@@ -77,6 +77,7 @@ class StockForecast(BaseModel):
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 def call_openai(prompt: str, system_prompt: str = "You are a financial AI assistant. Be concise and precise.") -> str:
+    print(f"Calling OpenAI with prompt: {prompt}")
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
@@ -92,9 +93,11 @@ def call_openai(prompt: str, system_prompt: str = "You are a financial AI assist
     }
     req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers)
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             res_data = json.loads(response.read().decode("utf-8"))
-            return res_data["choices"][0]["message"]["content"]
+            content = res_data["choices"][0]["message"]["content"]
+            print(f"OpenAI Response: {content}")
+            return content
     except Exception as e:
         print(f"OpenAI API Error: {e}")
         return ""
@@ -126,7 +129,7 @@ async def get_insights(role: str = "MANAGER"):
     Role-Aware Insight Generation.
     Provides tailored intelligence based on the user's role.
     """
-    insights = {
+    base_insights = {
         "MANAGER": [
             {"type": "CASHFLOW", "priority": "HIGH", "title": "Revenue Forecast", "description": "Expect 15% increase in collections next month based on historical trends."},
             {"type": "RISK", "priority": "MEDIUM", "title": "Portfolio Exposure", "description": "3 clients reached HIGH risk tier today."}
@@ -147,7 +150,22 @@ async def get_insights(role: str = "MANAGER"):
             {"type": "SYSTEM", "priority": "LOW", "title": "API Performance", "description": "All microservices are communicating within normal latency bounds."}
         ]
     }
-    return insights.get(role.upper(), insights["MANAGER"])
+    
+    insights_list = base_insights.get(role.upper(), base_insights["MANAGER"])
+    
+    # Try to add one purely dynamic insight using OpenAI
+    try:
+        dynamic_prompt = f"Generate a unique, 1-sentence financial insight for a {role} in an ERP system. Format: Title: [Title] | Description: [Description]."
+        ai_response = call_openai(dynamic_prompt, "You are a proactive financial analyst AI.")
+        if ai_response and "|" in ai_response:
+            parts = ai_response.split("|")
+            title = parts[0].replace("Title:", "").strip()
+            desc = parts[1].replace("Description:", "").strip()
+            insights_list.append({"type": "RECOMMENDATION", "priority": "LOW", "title": title, "description": desc})
+    except:
+        pass
+        
+    return insights_list
 
 @app.get("/api/v1/ai/peer-comparison", response_model=PeerComparisonResponse)
 async def get_peer_comparison(client_id: str):
