@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Plus, Search, Filter, Download, Package, AlertOctagon, TrendingUp, Warehouse, Loader2, Sparkles, History
+  Plus, Search, Filter, Download, Package, AlertOctagon, TrendingUp, Warehouse, Loader2, Sparkles, History, Edit, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -161,7 +162,8 @@ export default function InventoryPage() {
                     <TableHead className="w-[100px] pl-8 font-black uppercase text-[10px] tracking-widest">SKU</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Product</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
-                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest pr-8">Stock Level</TableHead>
+                    <TableHead className="text-center font-black uppercase text-[10px] tracking-widest">Stock Level</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest pr-8">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -187,8 +189,8 @@ export default function InventoryPage() {
                           <Badge variant="outline" className="rounded-lg border-emerald-500/30 text-emerald-600 bg-emerald-500/5 font-black text-[9px] px-2 py-0.5 uppercase">Healthy</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right pr-8">
-                        <div className="flex items-center justify-end gap-3">
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-3">
                           <div className="w-24 h-2 bg-muted/40 rounded-full overflow-hidden">
                             <div 
                               className={cn("h-full transition-all duration-500", product.stockQuantity <= product.minStockLevel ? "bg-red-500" : "bg-primary")} 
@@ -196,6 +198,32 @@ export default function InventoryPage() {
                             />
                           </div>
                           <span className="font-black text-lg w-10">{product.stockQuantity}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right pr-8">
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                           <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary">
+                              <Link href={`/dashboard/inventory/${product.id}/edit`}>
+                                <Edit className="h-4 w-4" />
+                              </Link>
+                           </Button>
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                             onClick={() => {
+                                if(confirm(`Are you sure you want to delete ${product.name}?`)) {
+                                  inventoryApi.delete(product.id)
+                                    .then(() => {
+                                       toast.success("Product removed");
+                                       window.location.reload();
+                                    })
+                                    .catch(() => toast.error("Failed to delete product"));
+                                }
+                             }}
+                           >
+                              <Trash2 className="h-4 w-4" />
+                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>

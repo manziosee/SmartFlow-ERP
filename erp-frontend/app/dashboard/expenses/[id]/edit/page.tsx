@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { expensesApi } from "@/lib/api";
+import { toast } from "sonner";
 
 
 const categories = [
@@ -90,9 +91,17 @@ export default function EditExpensePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    router.push("/dashboard/expenses");
+    try {
+      const id = Array.isArray(params.id) ? params.id[0] : params.id;
+      if (!id) return;
+      await expensesApi.update(id, formData);
+      toast.success("Expense entry updated successfully");
+      router.push("/dashboard/expenses");
+    } catch (err) {
+      toast.error("Failed to update expense entry");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
