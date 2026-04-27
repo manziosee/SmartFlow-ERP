@@ -62,10 +62,9 @@ public class Invoice {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<com.smartflow.erp.payment.Payment> payments = new java.util.ArrayList<>();
 
-    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
-    @Builder.Default
+    @OneToOne(mappedBy = "invoice", cascade = CascadeType.ALL)
     @com.fasterxml.jackson.annotation.JsonIgnore
-    private java.util.List<com.smartflow.erp.recovery.RecoveryCase> recoveryCases = new java.util.ArrayList<>();
+    private com.smartflow.erp.recovery.RecoveryCase recoveryCase;
 
     // AI/Notification logic
     @Builder.Default

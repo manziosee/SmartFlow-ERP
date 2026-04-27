@@ -61,6 +61,11 @@ public class Client {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+    @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<com.smartflow.erp.invoice.Invoice> invoices = new java.util.ArrayList<>();
+
     public enum RiskScore {
         LOW, MEDIUM, HIGH
     }
