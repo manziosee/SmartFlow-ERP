@@ -67,6 +67,6 @@ public class Invoice {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum Status {
-        DRAFT, SENT, PENDING, PAID, OVERDUE
+        DRAFT, SENT, PENDING, PAID, OVERDUE, CANCELLED
     }
 }

@@ -118,7 +118,7 @@ export default function EditClientPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-4xl font-black tracking-tighter">Edit Client</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Edit Client</h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                Managing profile for <span className="text-foreground font-bold">{formData.name}</span>
             </p>

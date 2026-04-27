@@ -35,11 +35,12 @@ import { invoicesApi, clientsApi, type Invoice, type Client } from "@/lib/api";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
-  DRAFT:   { label: "Draft",   icon: FileText,      className: "bg-muted text-muted-foreground border-muted" },
-  SENT:    { label: "Sent",    icon: Send,          className: "bg-blue-100 text-blue-700 border-blue-200" },
-  PENDING: { label: "Pending", icon: Clock,         className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  PAID:    { label: "Paid",    icon: CheckCircle,   className: "bg-green-100 text-green-700 border-green-200" },
-  OVERDUE: { label: "Overdue", icon: AlertTriangle, className: "bg-red-100 text-red-700 border-red-200" },
+  DRAFT:     { label: "Draft",     icon: FileText,      className: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/30 dark:text-gray-400" },
+  SENT:      { label: "Sent",      icon: Send,          className: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" },
+  PENDING:   { label: "Pending",   icon: Clock,         className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400" },
+  PAID:      { label: "Paid",      icon: CheckCircle,   className: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400" },
+  OVERDUE:   { label: "Overdue",   icon: AlertTriangle, className: "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400" },
+  CANCELLED: { label: "Cancelled", icon: Trash2,        className: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/30 dark:text-slate-400" },
 };
 
 export default function InvoicesPage() {
@@ -57,6 +58,7 @@ export default function InvoicesPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientsForGen, setSelectedClientsForGen] = useState<number[]>([]);
   const [genSearchQuery, setGenSearchQuery] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchInvoices = () => {
     setLoading(true);
@@ -64,6 +66,31 @@ export default function InvoicesPage() {
       .then(setInvoices)
       .catch(() => toast.error("Failed to load invoices"))
       .finally(() => setLoading(false));
+  };
+
+  const handleDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+    setIsDeleting(true);
+    try {
+      await invoicesApi.delete(invoiceToDelete);
+      toast.success("Invoice deleted successfully");
+      setInvoices(invoices.filter(i => i.id !== invoiceToDelete));
+      setInvoiceToDelete(null);
+    } catch {
+      toast.error("Failed to delete invoice");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelInvoice = async (id: number) => {
+    try {
+      await invoicesApi.cancel(id);
+      toast.success("Invoice cancelled");
+      fetchInvoices();
+    } catch {
+      toast.error("Failed to cancel invoice");
+    }
   };
 
   useEffect(() => { 
@@ -367,54 +394,130 @@ export default function InvoicesPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
-        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
-          <DialogHeader className="bg-primary p-8 text-primary-foreground">
-            <div className="flex justify-between items-start">
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl bg-card">
+          <div className="bg-primary p-10 text-primary-foreground relative overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-20 -mb-20 blur-2xl" />
+            
+            <div className="relative flex justify-between items-start">
               <div className="text-left">
-                <DialogTitle className="text-3xl font-black mb-1">
-                  INV-{String(selectedInvoice?.id ?? "").padStart(3, "0")}
+                <Badge className="mb-4 bg-white/20 hover:bg-white/30 text-white border-none px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                  Invoice Details
+                </Badge>
+                <DialogTitle className="text-4xl font-black tracking-tighter mb-1">
+                  INV-{String(selectedInvoice?.id ?? "").padStart(4, "0")}
                 </DialogTitle>
-                <DialogDescription className="text-primary-foreground/80 font-medium">
-                  Due {selectedInvoice && formatDate(selectedInvoice.dueDate)}
-                </DialogDescription>
+                <p className="text-primary-foreground/70 font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Issued on {selectedInvoice && formatDate(selectedInvoice.issueDate)}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Amount</p>
-                <p className="text-4xl font-black">{selectedInvoice && formatCurrency(selectedInvoice.amount)}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Total Amount</p>
+                <p className="text-5xl font-black tabular-nums tracking-tighter">
+                  {selectedInvoice && formatCurrency(selectedInvoice.amount)}
+                </p>
+                <Badge variant="outline" className={cn("mt-4 px-4 py-1 rounded-full font-bold uppercase tracking-tighter text-[10px]",
+                  statusConfig[selectedInvoice?.status?.toUpperCase() ?? "DRAFT"]?.className
+                )}>
+                  {selectedInvoice?.status}
+                </Badge>
               </div>
             </div>
-          </DialogHeader>
+          </div>
+
           {selectedInvoice && (
-            <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Client</p>
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Receipt className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-bold">{selectedInvoice.client?.name}</p>
-                      <p className="text-xs text-muted-foreground">{selectedInvoice.client?.email}</p>
+            <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Client Information</p>
+                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50">
+                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Receipt className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-lg leading-tight truncate">{selectedInvoice.client?.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{selectedInvoice.client?.email}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Status</p>
-                  <Badge className={cn("rounded-full px-4",
-                    selectedInvoice.status?.toUpperCase() === "PAID"
-                      ? "bg-emerald-500 hover:bg-emerald-600"
-                      : "bg-amber-500 hover:bg-amber-600")}>
-                    {selectedInvoice.status?.toUpperCase()}
-                  </Badge>
+                <div className="space-y-4 text-right">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Payment Terms</p>
+                    <div className="space-y-1">
+                      <p className="font-bold text-lg">Due by {formatDate(selectedInvoice.dueDate)}</p>
+                      <p className="text-sm text-muted-foreground">Late payment fees may apply after due date.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-4 pt-2">
+
+              {/* Line Items */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Invoice Items</p>
+                <div className="rounded-2xl border border-border/50 overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="font-bold">Item Description</TableHead>
+                        <TableHead className="text-center font-bold">Qty</TableHead>
+                        <TableHead className="text-right font-bold">Price</TableHead>
+                        <TableHead className="text-right font-bold">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedInvoice.items && selectedInvoice.items.length > 0 ? (
+                        selectedInvoice.items.map((item: any, idx: number) => (
+                          <TableRow key={idx} className="hover:bg-muted/20 border-border/30">
+                            <TableCell className="font-medium">{item.product?.name || item.description || "Service Rendered"}</TableCell>
+                            <TableCell className="text-center font-bold">{item.quantity || 1}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatCurrency(item.unitPrice || selectedInvoice.amount)}</TableCell>
+                            <TableCell className="text-right font-black tabular-nums">{formatCurrency((item.quantity || 1) * (item.unitPrice || selectedInvoice.amount))}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell className="font-medium">General Service / Product</TableCell>
+                          <TableCell className="text-center font-bold">1</TableCell>
+                          <TableCell className="text-right tabular-nums">{formatCurrency(selectedInvoice.amount)}</TableCell>
+                          <TableCell className="text-right font-black tabular-nums">{formatCurrency(selectedInvoice.amount)}</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Calculation Summary */}
+              <div className="flex justify-end">
+                <div className="w-64 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground font-medium">Subtotal</span>
+                    <span className="font-bold tabular-nums">{formatCurrency(selectedInvoice.amount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground font-medium">Tax (18% VAT)</span>
+                    <span className="font-bold tabular-nums">{formatCurrency(selectedInvoice.amount * 0.18)}</span>
+                  </div>
+                  <div className="pt-3 border-t border-border flex justify-between">
+                    <span className="font-black uppercase tracking-tighter">Total Due</span>
+                    <span className="font-black text-xl tabular-nums text-primary">{formatCurrency(selectedInvoice.amount * 1.18)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 sticky bottom-0 bg-card py-4 border-t border-border/50">
                 {user?.role === "CLIENT" && selectedInvoice.status?.toUpperCase() !== "PAID" && (
-                  <Button className="flex-1 font-black h-12 rounded-2xl">Pay Now</Button>
+                  <Button className="flex-1 font-black h-14 rounded-2xl text-lg shadow-lg glow">Pay Now</Button>
                 )}
+                <Button variant="outline" className="flex-1 font-bold h-14 rounded-2xl gap-2 border-2" onClick={() => window.print()}>
+                  <Download className="h-5 w-5" /> Download PDF
+                </Button>
                 {user?.role !== "CLIENT" && (
-                  <Button variant="outline" className="flex-1 font-black h-12 rounded-2xl" asChild>
+                  <Button variant="secondary" className="flex-1 font-bold h-14 rounded-2xl border-2" asChild>
                     <Link href={`/dashboard/invoices/${selectedInvoice.id}/edit`}>Edit Record</Link>
                   </Button>
                 )}
@@ -424,19 +527,27 @@ export default function InvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation — no real delete API on invoices, show notice */}
+      {/* Delete Confirmation */}
       <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Invoice <span className="font-bold">INV-{String(invoiceToDelete ?? "").padStart(3, "0")}</span> cannot be deleted once issued. Contact your administrator.
+            <div className="h-16 w-16 bg-rose-100 rounded-2xl flex items-center justify-center mb-6">
+               <Trash2 className="h-8 w-8 text-rose-600" />
+            </div>
+            <AlertDialogTitle className="text-3xl font-black tracking-tighter">Delete Invoice?</AlertDialogTitle>
+            <AlertDialogDescription className="text-lg font-medium text-muted-foreground py-2">
+              Are you sure you want to delete <span className="text-foreground font-bold">INV-{String(invoiceToDelete ?? "").padStart(4, "0")}</span>? 
+              This action is permanent and will remove all associated item records and stock adjustments.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { toast.info("Contact admin to delete invoices."); setInvoiceToDelete(null); }}>
-              Understood
+          <AlertDialogFooter className="pt-6 gap-3">
+            <AlertDialogCancel className="h-14 rounded-2xl font-bold flex-1 border-2">Keep Invoice</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteInvoice}
+              disabled={isDeleting}
+              className="h-14 rounded-2xl font-black flex-1 bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200"
+            >
+              {isDeleting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Yes, Delete It"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

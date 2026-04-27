@@ -57,8 +57,8 @@ export default function InventoryPage() {
     <div className="space-y-8 font-geist animate-in fade-in duration-700">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter">Inventory Control</h1>
-          <p className="text-muted-foreground font-medium">Manage stock levels, SKUs and warehouse logistics</p>
+          <h1 className="text-3xl font-bold tracking-tight">Inventory Control</h1>
+          <p className="text-muted-foreground">Manage stock levels, SKUs and warehouse logistics</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="gap-2 rounded-2xl border-border/50 bg-background/50 font-bold">

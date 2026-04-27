@@ -84,7 +84,7 @@ export default function ReconciliationPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter">Bank Reconciliation</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Bank Reconciliation</h1>
           <p className="text-muted-foreground font-medium flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
             Financial hygiene: Matching ERP ledgers with bank reality

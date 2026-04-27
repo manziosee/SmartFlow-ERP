@@ -115,7 +115,7 @@ export default function EditExpensePage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-4xl font-black tracking-tighter">Edit Expense</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Edit Expense</h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                Revising entry <span className="text-foreground font-bold">{params.id}</span>
             </p>

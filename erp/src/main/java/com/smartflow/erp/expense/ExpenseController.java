@@ -44,4 +44,17 @@ public class ExpenseController {
         expenseRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update an expense")
+    public ResponseEntity<Expense> updateExpense(@PathVariable Long id, @RequestBody Expense details) {
+        return expenseRepository.findById(id).map(expense -> {
+            expense.setDescription(details.getDescription());
+            expense.setAmount(details.getAmount());
+            expense.setCategory(details.getCategory());
+            expense.setStatus(details.getStatus());
+            expense.setDate(details.getDate());
+            return ResponseEntity.ok(expenseRepository.save(expense));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

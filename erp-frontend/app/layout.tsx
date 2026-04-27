@@ -28,6 +28,10 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/contexts/AuthContext";
 
+import { Outfit } from 'next/font/google'
+
+const outfit = Outfit({ subsets: ['latin'] })
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-background" suppressHydrationWarning>
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className={`${outfit.className} antialiased`} suppressHydrationWarning>
         <AuthProvider>
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}

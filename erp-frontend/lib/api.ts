@@ -229,6 +229,10 @@ export const invoicesApi = {
     apiFetch<Invoice>(`${API_URL}/invoices/${id}/send`, { method: "POST" }),
   generateRecurring: (clientIds?: number[]) =>
     apiFetch<Invoice[]>(`${API_URL}/invoices/generate`, { method: "POST", body: clientIds ? JSON.stringify(clientIds) : undefined }),
+  delete: (id: number) =>
+    apiFetch<void>(`${API_URL}/invoices/${id}`, { method: "DELETE" }),
+  cancel: (id: number) =>
+    apiFetch<Invoice>(`${API_URL}/invoices/${id}/cancel`, { method: "POST" }),
 };
 
 // ─── CLIENTS ──────────────────────────────────────────────────────────────

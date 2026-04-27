@@ -29,7 +29,7 @@ export default function TaxesPage() {
     <div className="space-y-8 font-geist animate-in fade-in duration-700">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter">Tax Compliance</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tax Compliance</h1>
           <p className="text-muted-foreground font-medium">Global tax configurations and jurisdictional regulatory compliance</p>
         </div>
         <div className="flex gap-3">
