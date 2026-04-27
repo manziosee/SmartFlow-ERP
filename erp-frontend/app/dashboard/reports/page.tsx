@@ -40,7 +40,9 @@ import {
   FileText,
   Users,
   Calendar,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { analyticsApi, expensesApi, invoicesApi } from "@/lib/api";
 import { useEffect } from "react";
@@ -67,9 +69,9 @@ export default function ReportsPage() {
     async function loadData() {
       try {
         const [summary, cashflow, expenses, invoices] = await Promise.all([
-          analyticsApi.getSummary(),
-          analyticsApi.getCashflow(),
-          expensesApi.getAll(),
+          analyticsApi.getSummary(dateRange),
+          analyticsApi.getCashflow(dateRange),
+          expensesApi.getAll(dateRange),
           invoicesApi.getAll(),
         ]);
 
@@ -130,18 +132,16 @@ export default function ReportsPage() {
       }
     }
     loadData();
-  }, []);
+  }, [dateRange]);
 
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-          <p className="text-muted-foreground">
-            Comprehensive financial analytics and insights
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">Intelligence Reports</h1>
+          <p className="text-sm text-muted-foreground">Comprehensive financial analytics and workspace insights</p>
         </div>
         <div className="flex items-center gap-4">
           <Select value={dateRange} onValueChange={setDateRange}>
@@ -157,7 +157,20 @@ export default function ReportsPage() {
               <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => {
+               const csv = "Month,Revenue,Expenses,Profit\n" + revenueData.map(r => `${r.month},${r.revenue},${r.expenses},${r.profit}`).join("\n");
+               const blob = new Blob([csv], { type: 'text/csv' });
+               const url = window.URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               a.download = `smartflow_report_${dateRange}.csv`;
+               a.click();
+               toast.success("Report exported successfully");
+            }}
+          >
             <Download className="h-4 w-4" />
             Export Report
           </Button>
@@ -165,75 +178,76 @@ export default function ReportsPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-5">
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Revenue</CardDescription>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Total Revenue</CardDescription>
+            <DollarSign className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-semibold tracking-tight">
               ${(stats.totalRevenue / 1000).toFixed(0)}K
             </div>
-            <div className="flex items-center gap-1 text-xs text-green-600">
+            <div className="flex items-center gap-1 text-[10px] text-green-600 font-bold mt-2">
               <TrendingUp className="h-3 w-3" />
-              +{stats.revenueGrowth}% from last year
+              +{stats.revenueGrowth}%
             </div>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Expenses</CardDescription>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Total Expenses</CardDescription>
+            <TrendingDown className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-semibold tracking-tight">
               ${(stats.totalExpenses / 1000).toFixed(0)}K
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <TrendingUp className="h-3 w-3" />
-              +8.2% from last year
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold mt-2 italic">
+              Actual burn
             </div>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Net Profit</CardDescription>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-emerald-700/60 mb-1">Net Profit</CardDescription>
+            <TrendingUp className="h-5 w-5 text-emerald-600 transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-bold">
               ${(stats.totalProfit / 1000).toFixed(0)}K
             </div>
-            <div className="flex items-center gap-1 text-xs text-green-600">
+            <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold mt-2">
               <TrendingUp className="h-3 w-3" />
-              +18.5% from last year
+              Target Met
             </div>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Profit Margin</CardDescription>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-indigo-700/60 mb-1">Profit Margin</CardDescription>
+            <FileText className="h-5 w-5 text-indigo-600 transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-6">
             <div className="text-2xl font-bold">{stats.profitMargin.toFixed(1)}%</div>
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <TrendingUp className="h-3 w-3" />
-              +3.2% from last year
+            <div className="flex items-center gap-1 text-[10px] text-indigo-600 font-bold mt-2">
+              Efficient
             </div>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Active Clients</CardDescription>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Active Clients</CardDescription>
+            <Users className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeClients}</div>
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <TrendingUp className="h-3 w-3" />
-              +6 new this year
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-semibold tracking-tight">{stats.activeClients}</div>
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold mt-2">
+              Retained
             </div>
           </CardContent>
         </Card>

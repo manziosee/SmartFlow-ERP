@@ -19,8 +19,22 @@ public class ExpenseController {
 
     @GetMapping
     @Operation(summary = "Get all expenses")
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+    public List<Expense> getAllExpenses(@RequestParam(required = false) String period) {
+        List<Expense> expenses = expenseRepository.findAll();
+        if (period != null) {
+            java.time.LocalDate now = java.time.LocalDate.now();
+            return expenses.stream().filter(e -> {
+                if (e.getDate() == null) return false;
+                switch (period) {
+                    case "this-month": return e.getDate().getMonth() == now.getMonth() && e.getDate().getYear() == now.getYear();
+                    case "last-month": return e.getDate().isAfter(now.minusMonths(1).withDayOfMonth(1).minusDays(1)) && e.getDate().isBefore(now.withDayOfMonth(1));
+                    case "this-quarter": return e.getDate().isAfter(now.minusMonths(3));
+                    case "this-year": return e.getDate().getYear() == now.getYear();
+                    default: return true;
+                }
+            }).toList();
+        }
+        return expenses;
     }
 
     @PostMapping

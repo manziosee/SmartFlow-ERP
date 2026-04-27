@@ -79,6 +79,7 @@ export interface Payment {
   amount: number;
   paymentDate: string;
   method: string;
+  status: string;
 }
 
 export interface Expense {
@@ -159,6 +160,7 @@ export interface AnalyticsSummary {
   totalRevenue: number;
   outstandingInvoices: number;
   activeClients: number;
+  clientsWithInvoices: number;
   overdueAmount: number;
   paidInvoices: number;
   pendingInvoices: number;
@@ -219,7 +221,7 @@ export const analyticsApi = {
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────
 export const invoicesApi = {
-  getAll: () => apiFetch<Invoice[]>(`${API_URL}/invoices`),
+  getAll: (period?: string) => apiFetch<Invoice[]>(`${API_URL}/invoices${period ? `?period=${period}` : ''}`),
   getById: (id: number | string) => apiFetch<any>(`${API_URL}/invoices/${id}`),
   create: (data: Partial<Invoice>) =>
     apiFetch<Invoice>(`${API_URL}/invoices`, { method: "POST", body: JSON.stringify(data) }),
@@ -257,7 +259,7 @@ export const paymentsApi = {
 
 // ─── EXPENSES ─────────────────────────────────────────────────────────────
 export const expensesApi = {
-  getAll: () => apiFetch<Expense[]>(`${API_URL}/expenses`),
+  getAll: (period?: string) => apiFetch<Expense[]>(`${API_URL}/expenses${period ? `?period=${period}` : ''}`),
   getById: (id: number | string) => apiFetch<Expense>(`${API_URL}/expenses/${id}`),
   create: (data: Partial<Expense>) =>
     apiFetch<Expense>(`${API_URL}/expenses`, { method: "POST", body: JSON.stringify(data) }),
@@ -367,6 +369,8 @@ export const inventoryApi = {
   update: (id: number, data: Partial<Product>) =>
     apiFetch<Product>(`${API_URL}/inventory/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id: number) => apiFetch<void>(`${API_URL}/inventory/${id}`, { method: "DELETE" }),
+  getLedger: () => apiFetch<any[]>(`${API_URL}/inventory/ledger`),
+  getProductLedger: (id: number) => apiFetch<any[]>(`${API_URL}/inventory/${id}/ledger`),
   getForecast: (sku: string, currentStock: number, avgDailySales: number) =>
     apiFetch<any>(`${AI_URL}/forecast/inventory/${sku}?current_stock=${currentStock}&avg_daily_sales=${avgDailySales}`),
 };
@@ -385,6 +389,7 @@ export const vendorsApi = {
 // ─── HR & PAYROLL ──────────────────────────────────────────────────────────
 export const hrApi = {
   getEmployees: () => apiFetch<Employee[]>(`${API_URL}/hr/employees`),
+  getEmployee: (id: number) => apiFetch<Employee>(`${API_URL}/hr/employees/${id}`),
   createEmployee: (data: any) =>
     apiFetch<Employee>(`${API_URL}/hr/employees`, { method: "POST", body: JSON.stringify(data) }),
   updateEmployee: (id: number, data: any) =>
@@ -392,12 +397,17 @@ export const hrApi = {
   deleteEmployee: (id: number) =>
     apiFetch<void>(`${API_URL}/hr/employees/${id}`, { method: "DELETE" }),
   calculatePayroll: (gross: number) => 
-    apiFetch<any>(`${RULES_URL}/payroll`, { method: "POST", body: JSON.stringify({ gross_salary: gross }) }),
+    apiFetch<any>(`${API_URL}/hr/payroll/calculate`, { 
+      method: "POST", 
+      body: JSON.stringify({ grossAmount: gross }) 
+    }),
+  getBenefits: () => apiFetch<any>(`${API_URL}/hr/payroll/benefits`),
+  getCompliance: () => apiFetch<any>(`${API_URL}/hr/payroll/compliance`),
 };
 
 // ─── TAXES ────────────────────────────────────────────────────────────────
 export const taxesApi = {
-  getRules: () => apiFetch<TaxRule[]>(`${API_URL}/config/taxes`),
+  getRules: () => apiFetch<TaxRule[]>(`${API_URL}/taxes/rules`),
   calculateRate: (region: string, category: string) =>
     apiFetch<{ tax_rate: number }>(`${RULES_URL}/tax-rate`, { method: "POST", body: JSON.stringify({ region, category }) }),
 };

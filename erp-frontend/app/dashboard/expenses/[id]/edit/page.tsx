@@ -114,7 +114,7 @@ export default function EditExpensePage() {
   }
 
   return (
-    <div className="space-y-8 pb-12 font-geist">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
@@ -124,7 +124,7 @@ export default function EditExpensePage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Edit Expense</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Edit Expense</h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                Revising entry <span className="text-foreground font-bold">{params.id}</span>
             </p>
@@ -135,22 +135,22 @@ export default function EditExpensePage() {
       <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
-           <Card className="rounded-[2.5rem] border-border/50 shadow-none overflow-hidden">
+           <Card className="rounded-2xl border-border/50 shadow-none overflow-hidden">
               <CardHeader className="bg-muted/30 p-8 border-b">
-                 <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+                 <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
                     <Receipt className="h-6 w-6 text-primary" />
                     Expenditure Context
                  </CardTitle>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 italic">Line Description</Label>
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 italic">Line Description</Label>
                     <Input value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="h-14 rounded-2xl border-border/50 bg-muted/20 text-lg font-bold" />
                  </div>
 
                  <div className="grid gap-6 md:grid-cols-2 text-balance">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                           <Tag className="h-3 w-3" />
                           Ledger Category
                        </Label>
@@ -164,7 +164,7 @@ export default function EditExpensePage() {
                        </Select>
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                           <Store className="h-3 w-3" />
                           Vendor / Merchant
                        </Label>
@@ -174,16 +174,16 @@ export default function EditExpensePage() {
 
                  <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                           <Calendar className="h-3 w-3" />
                           Expenditure Date
                        </Label>
                        <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="h-12 rounded-2xl border-border/50 bg-muted/20" />
                     </div>
                     <div className="space-y-2">
-                       <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1 italic">Total Amount (Incl. VAT)</Label>
+                       <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1 italic">Total Amount (Incl. VAT)</Label>
                        <div className="relative">
-                          <Input type="number" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} className="h-12 rounded-2xl border-border/50 bg-muted/20 pl-8 font-black" />
+                          <Input type="number" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value) || 0})} className="h-12 rounded-2xl border-border/50 bg-muted/20 pl-8 font-bold" />
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">$</span>
                        </div>
                     </div>
@@ -192,9 +192,9 @@ export default function EditExpensePage() {
            </Card>
 
            {/* Evidence & Compliance */}
-           <Card className="rounded-[2.5rem] border-border/50 shadow-none overflow-hidden">
-              <CardHeader className="p-8 pb-4">
-                 <CardTitle className="text-xl font-black">Audit Evidence</CardTitle>
+           <Card className="rounded-2xl border-border/50 shadow-none overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                 <CardTitle className="text-xl font-bold">Audit Evidence</CardTitle>
                  <CardDescription>Receipts and compliance documentation</CardDescription>
               </CardHeader>
               <CardContent className="p-8 pt-4 space-y-6">
@@ -204,7 +204,7 @@ export default function EditExpensePage() {
                     </div>
                     <div>
                        <p className="text-sm font-bold">Replace Receipt Image</p>
-                       <p className="text-xs text-muted-foreground italic">Drag or click to upload PDF/JPG</p>
+                       
                     </div>
                  </div>
                  <div className="flex items-center gap-3 p-4 rounded-2xl border-emerald-100 bg-emerald-50/50">
@@ -216,12 +216,12 @@ export default function EditExpensePage() {
         </div>
 
         {/* Sidebar Status */}
-        <div className="space-y-8">
-           <Card className="rounded-[2.5rem] border-border/50 shadow-xl shadow-primary/5 p-8 sticky top-24">
-              <h3 className="text-lg font-black uppercase tracking-widest mb-6 border-b pb-4">Spend Control</h3>
+        <div className="space-y-6">
+           <Card className="rounded-2xl border-border/50 shadow-xl shadow-primary/5 p-8 sticky top-24">
+              <h3 className="text-lg font-bold uppercase tracking-widest mb-6 border-b pb-4">Spend Control</h3>
               <div className="space-y-6">
                  <div className="space-y-4">
-                    <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg gap-2 shadow-lg shadow-primary/30" disabled={isSubmitting}>
+                    <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg gap-2 shadow-lg shadow-primary/30" disabled={isSubmitting}>
                        {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                        Update Entry
                     </Button>
@@ -234,14 +234,14 @@ export default function EditExpensePage() {
                     <div className="flex items-center gap-3 p-4 rounded-2xl border bg-muted/10">
                        <TrendingDown className="h-5 w-5 text-red-500" />
                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-tight">Opex Impact</span>
+                          <span className="text-[10px] font-bold uppercase tracking-tight">Opex Impact</span>
                           <span className="text-xs text-foreground font-extrabold">{formatCurrency(formData.amount)} Deduced</span>
                        </div>
                     </div>
                     <div className="flex items-center gap-3 p-4 rounded-2xl border border-amber-100 bg-amber-50/50">
                        <ShieldAlert className="h-5 w-5 text-amber-600" />
                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase tracking-tight">Policy Check</span>
+                          <span className="text-[10px] font-bold uppercase tracking-tight">Policy Check</span>
                           <span className="text-xs text-amber-700 font-bold">Within monthly limit</span>
                        </div>
                     </div>

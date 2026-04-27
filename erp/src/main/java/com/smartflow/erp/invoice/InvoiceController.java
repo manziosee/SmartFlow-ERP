@@ -18,14 +18,35 @@ public class InvoiceController {
     private final com.smartflow.erp.client.ClientRepository clientRepository;
 
     @GetMapping
-    public ResponseEntity<List<Invoice>> getAllInvoices(org.springframework.security.core.Authentication authentication) {
+    public ResponseEntity<List<Invoice>> getAllInvoices(
+            @RequestParam(required = false) String period,
+            org.springframework.security.core.Authentication authentication) {
+        List<Invoice> invoices;
         if (authentication != null && authentication.getPrincipal() instanceof com.smartflow.erp.auth.User) {
             com.smartflow.erp.auth.User user = (com.smartflow.erp.auth.User) authentication.getPrincipal();
             if (user.getRole() == com.smartflow.erp.auth.User.Role.CLIENT) {
-                return ResponseEntity.ok(invoiceRepository.findByClientId(user.getClientId()));
+                invoices = invoiceRepository.findByClientId(user.getClientId());
+            } else {
+                invoices = invoiceRepository.findAll();
             }
+        } else {
+            invoices = invoiceRepository.findAll();
         }
-        return ResponseEntity.ok(invoiceRepository.findAll());
+
+        if (period != null) {
+            java.time.LocalDate now = java.time.LocalDate.now();
+            invoices = invoices.stream().filter(i -> {
+                if (i.getIssueDate() == null) return false;
+                switch (period) {
+                    case "this-month": return i.getIssueDate().getMonth() == now.getMonth() && i.getIssueDate().getYear() == now.getYear();
+                    case "last-month": return i.getIssueDate().isAfter(now.minusMonths(1).withDayOfMonth(1).minusDays(1)) && i.getIssueDate().isBefore(now.withDayOfMonth(1));
+                    case "this-quarter": return i.getIssueDate().isAfter(now.minusMonths(3));
+                    case "this-year": return i.getIssueDate().getYear() == now.getYear();
+                    default: return true;
+                }
+            }).toList();
+        }
+        return ResponseEntity.ok(invoices);
     }
 
     @GetMapping("/{id}")
@@ -80,6 +101,9 @@ public class InvoiceController {
                 inv.setIssueDate(java.time.LocalDate.now());
                 inv.setDueDate(java.time.LocalDate.now().plusDays(30));
                 
+                // CRITICAL: Set unique invoice number to avoid 400/500 on save
+                inv.setInvoiceNumber("INV-GEN-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+                
                 java.math.BigDecimal vat = inv.getAmount().multiply(new java.math.BigDecimal("0.18"));
                 inv.setTaxAmount(vat);
                 
@@ -93,6 +117,16 @@ public class InvoiceController {
 
     @PostMapping
     public ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {
+        // Ensure unique invoice number if not provided or to avoid collisions
+        if (invoice.getInvoiceNumber() == null || invoice.getInvoiceNumber().isEmpty()) {
+            invoice.setInvoiceNumber("INV-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        } else {
+            // Check for duplicates
+            if (invoiceRepository.findByInvoiceNumber(invoice.getInvoiceNumber()).isPresent()) {
+                invoice.setInvoiceNumber(invoice.getInvoiceNumber() + "-" + java.util.UUID.randomUUID().toString().substring(0, 4).toUpperCase());
+            }
+        }
+
         // Implement VAT calc (18% flat for Rwanda)
         if (invoice.getAmount() != null) {
             java.math.BigDecimal vat = invoice.getAmount().multiply(new java.math.BigDecimal("0.18"));

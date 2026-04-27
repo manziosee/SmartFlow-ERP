@@ -97,11 +97,11 @@ export default function AccountingPage() {
   const liability = totals.outputTax - totals.inputTax;
 
   return (
-    <div className="space-y-8 pb-12 font-geist">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tax Compliance</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Tax Compliance</h1>
           <p className="text-muted-foreground font-medium">Real-time Rwandan tax liability monitoring (18% Flat Rate)</p>
         </div>
         <div className="flex gap-3">
@@ -127,11 +127,11 @@ export default function AccountingPage() {
       <div className="grid gap-6 md:grid-cols-4">
         <Card className="bg-primary/5 border-primary/20 rounded-[2rem] overflow-hidden shadow-none border-dashed transition-all hover:border-solid hover:shadow-xl hover:shadow-primary/5">
           <CardHeader className="pb-2">
-            <CardDescription className="text-primary font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
+            <CardDescription className="text-primary font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
                <Calculator className="h-4 w-4" />
                Net VAT Liability
             </CardDescription>
-            <CardTitle className="text-4xl font-black tracking-tight">{formatCurrency(liability)}</CardTitle>
+            <CardTitle className="text-2xl font-semibold tracking-tight">{formatCurrency(liability)}</CardTitle>
           </CardHeader>
           <CardContent>
              <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold">
@@ -141,39 +141,39 @@ export default function AccountingPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-[2rem] border-border/50 shadow-none hover:shadow-lg transition-all">
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="uppercase text-[10px] font-black tracking-widest flex items-center gap-2">
+            <CardDescription className="uppercase text-[10px] font-bold tracking-widest flex items-center gap-2">
                <TrendingUp className="h-4 w-4 text-emerald-500" />
                Output Tax (Collected)
             </CardDescription>
-            <CardTitle className="text-3xl font-black">{formatCurrency(totals.outputTax)}</CardTitle>
+            <CardTitle className="text-3xl font-bold">{formatCurrency(totals.outputTax)}</CardTitle>
           </CardHeader>
           <CardContent>
              <p className="text-xs text-muted-foreground font-medium">From {taxRecords.filter(r => r.type === 'Output').length} sales invoices</p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[2rem] border-border/50 shadow-none hover:shadow-lg transition-all">
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="uppercase text-[10px] font-black tracking-widest flex items-center gap-2">
+            <CardDescription className="uppercase text-[10px] font-bold tracking-widest flex items-center gap-2">
                <TrendingDown className="h-4 w-4 text-red-500" />
                Input Tax (Expenses)
             </CardDescription>
-            <CardTitle className="text-3xl font-black">{formatCurrency(totals.inputTax)}</CardTitle>
+            <CardTitle className="text-3xl font-bold">{formatCurrency(totals.inputTax)}</CardTitle>
           </CardHeader>
           <CardContent>
              <p className="text-xs text-muted-foreground font-medium">Deductible from expenditures</p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[2rem] border-border/50 shadow-none hover:shadow-lg transition-all">
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="pb-2">
-            <CardDescription className="uppercase text-[10px] font-black tracking-widest flex items-center gap-2">
+            <CardDescription className="uppercase text-[10px] font-bold tracking-widest flex items-center gap-2">
                <Layers className="h-4 w-4 text-primary" />
                Taxable Turnover
             </CardDescription>
-            <CardTitle className="text-3xl font-black">{formatCurrency(totals.netRevenue)}</CardTitle>
+            <CardTitle className="text-3xl font-bold">{formatCurrency(totals.netRevenue)}</CardTitle>
           </CardHeader>
           <CardContent>
              <p className="text-xs text-muted-foreground font-medium">Net revenue base for {period}</p>
@@ -190,7 +190,7 @@ export default function AccountingPage() {
                     <CardTitle className="text-xl font-bold">Declaration Ledger</CardTitle>
                     <CardDescription>All tax-eligible transactions for {period}</CardDescription>
                   </div>
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 font-bold border-emerald-100 uppercase tracking-tighter">
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 font-bold border-emerald-100 uppercase tracking-tight">
                      <FileCheck className="h-3 w-3 mr-1" />
                      Audit Ready
                   </Badge>
@@ -214,12 +214,12 @@ export default function AccountingPage() {
                            <TableCell className="text-sm font-medium">{record.entity}</TableCell>
                            <TableCell className="text-xs text-muted-foreground italic font-mono">{formatDate(record.date)}</TableCell>
                            <TableCell>
-                              <Badge variant="outline" className={cn("font-black text-[10px] px-2", 
+                              <Badge variant="outline" className={cn("font-bold text-[10px] px-2", 
                                  record.type === 'Output' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-600 border-red-100")}>
                                  {record.type.toUpperCase()}
                               </Badge>
                            </TableCell>
-                           <TableCell className="text-right pr-6 font-black tabular-nums">
+                           <TableCell className="text-right pr-6 font-bold tabular-nums">
                               {record.type === 'Output' ? '+' : '-'}{formatCurrency(record.vat)}
                            </TableCell>
                         </TableRow>
@@ -232,18 +232,18 @@ export default function AccountingPage() {
          {/* Side Compliance Check */}
          <div className="space-y-6">
             <Card className="rounded-3xl border-border/50 p-8 bg-gradient-to-br from-indigo-50/50 via-white to-white shadow-none">
-               <h3 className="text-lg font-black mb-6 flex items-center gap-2">
+               <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                   <Calculator className="h-5 w-5 text-indigo-600" />
                   Tax Estimator
                </h3>
                <div className="space-y-6">
                   <div className="space-y-1">
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Est. Quarterly EBM sales</p>
-                     <p className="text-3xl font-black text-indigo-900 tracking-tighter">{formatCurrency(totals.netRevenue)}</p>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Est. Quarterly EBM sales</p>
+                     <p className="text-3xl font-bold text-indigo-900 tracking-tight">{formatCurrency(totals.netRevenue)}</p>
                   </div>
                   <div className="space-y-1">
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Projected VAT Payable</p>
-                     <p className="text-3xl font-black text-indigo-600 tracking-tighter">{formatCurrency(totals.netRevenue * 0.18)}</p>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Projected VAT Payable</p>
+                     <p className="text-3xl font-bold text-indigo-600 tracking-tight">{formatCurrency(totals.netRevenue * 0.18)}</p>
                   </div>
                   <Button className="w-full bg-indigo-600 hover:bg-indigo-700 font-extrabold rounded-2xl h-14 shadow-lg shadow-indigo-100">
                      Generate Tax Projection
@@ -258,12 +258,12 @@ export default function AccountingPage() {
                   </div>
                   <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
                </div>
-               <h1 className="text-3xl font-bold tracking-tight">Bank Reconciliation</h1>
+               <h1 className="text-2xl font-semibold tracking-tight">Bank Reconciliation</h1>
                <p className="text-xs text-muted-foreground font-medium">Match {taxRecords.length} internal records with bank statements.</p>
             </Card>
 
             <Card className="rounded-3xl border-border/50 p-8 shadow-none">
-               <p className="text-[10px] font-black text-muted-foreground uppercase mb-6 tracking-[0.2em] border-b pb-2">Compliance Hub</p>
+               <p className="text-[10px] font-bold text-muted-foreground uppercase mb-6 tracking-[0.2em] border-b pb-2">Compliance Hub</p>
                <div className="space-y-4">
                   {[
                     "EBM (Electronic Billing Machine) sync confirmed",

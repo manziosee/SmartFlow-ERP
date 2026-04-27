@@ -41,10 +41,10 @@ export function RevenueChart() {
 
 
   return (
-    <Card className="col-span-4">
-      <CardHeader>
-        <CardTitle>Revenue Overview</CardTitle>
-        <CardDescription>
+    <Card className="col-span-4 border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Revenue Overview</CardTitle>
+        <CardDescription className="text-sm">
           Monthly revenue and expenses comparison
         </CardDescription>
       </CardHeader>

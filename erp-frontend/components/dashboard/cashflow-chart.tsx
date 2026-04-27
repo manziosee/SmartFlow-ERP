@@ -45,10 +45,10 @@ export function CashflowChart() {
   }, []);
 
   return (
-    <Card className="col-span-3">
-      <CardHeader>
-        <CardTitle>Cash Flow</CardTitle>
-        <CardDescription>Inflow vs outflow from live data</CardDescription>
+    <Card className="col-span-3 border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Cash Flow</CardTitle>
+        <CardDescription className="text-sm">Inflow vs outflow from live data</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (

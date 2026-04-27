@@ -24,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, Search, Filter, Download, MoreHorizontal, Eye, Edit,
-  Send, Trash2, FileText, Clock, CheckCircle, AlertTriangle, Receipt, Loader2, RefreshCw
+  Send, Trash2, FileText, Clock, CheckCircle, AlertTriangle, Receipt, Loader2, RefreshCw, DollarSign
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -163,10 +163,10 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-          <p className="text-muted-foreground">Create, manage, and track all your invoices</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Invoice Ledger</h1>
+          <p className="text-sm text-muted-foreground">Centralized control for billing, settlements and recurring revenue</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isGenDialogOpen} onOpenChange={setIsGenDialogOpen}>
@@ -178,7 +178,7 @@ export default function InvoicesPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] rounded-[2rem]">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black">Recurring Billing</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">Recurring Billing</DialogTitle>
                 <DialogDescription className="font-medium">
                   Select clients to generate monthly invoices based on their set rates.
                 </DialogDescription>
@@ -194,8 +194,8 @@ export default function InvoicesPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between px-2 pb-2 border-b">
-                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Client Entity</p>
-                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monthly Rate</p>
+                   <p className="text-sm font-medium text-muted-foreground text-muted-foreground">Client Entity</p>
+                   <p className="text-sm font-medium text-muted-foreground text-muted-foreground">Monthly Rate</p>
                 </div>
                 {clients.filter(c => c.name.toLowerCase().includes(genSearchQuery.toLowerCase())).map((client) => {
                   const hasRate = (client.monthlyRate || 0) > 0;
@@ -217,11 +217,11 @@ export default function InvoicesPage() {
                         <label htmlFor={`client-${client.id}`} className={cn("font-bold", hasRate ? "cursor-pointer" : "cursor-not-allowed")}>
                           {client.name}
                           {!hasRate && <span className="ml-2 text-[8px] bg-red-100 text-red-600 px-1 rounded">NO RATE SET</span>}
-                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">{client.company || 'Private Client'}</p>
+                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">{client.company || 'Private Client'}</p>
                         </label>
                       </div>
                       <div className="text-right">
-                         <p className={cn("font-black", hasRate ? "text-primary" : "text-muted-foreground")}>
+                         <p className={cn("font-bold", hasRate ? "text-primary" : "text-muted-foreground")}>
                            {hasRate ? formatCurrency(client.monthlyRate!) : "—"}
                          </p>
                       </div>
@@ -232,7 +232,7 @@ export default function InvoicesPage() {
               <div className="pt-4 flex gap-3">
                  <Button variant="ghost" className="flex-1 font-bold h-12 rounded-2xl" onClick={() => setSelectedClientsForGen(clients.filter(c => (c.monthlyRate || 0) > 0).map(c => c.id))}>Select All Billable</Button>
                  <Button 
-                   className="flex-[2] font-black gap-2 h-12 rounded-2xl" 
+                   className="flex-[2] font-bold gap-2 h-12 rounded-2xl" 
                    onClick={handleGenerateInvoices}
                    disabled={isGenerating || (selectedClientsForGen.length === 0)}
                  >
@@ -249,27 +249,63 @@ export default function InvoicesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-4">
         {loading ? Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}><CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
-            <CardContent><Skeleton className="h-8 w-32" /></CardContent></Card>
+          <Card key={i} className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+            <CardHeader className="flex flex-row items-center justify-between pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
+            <CardContent className="px-6 pb-6"><Skeleton className="h-8 w-32" /></CardContent>
+          </Card>
         )) : (
           <>
-            <Card><CardHeader className="pb-2"><CardDescription>Total Invoiced</CardDescription></CardHeader>
-              <CardContent><div className="text-2xl font-bold">{formatCurrency(stats.total)}</div></CardContent></Card>
-            <Card><CardHeader className="pb-2"><CardDescription>Paid</CardDescription></CardHeader>
-              <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(stats.paid)}</div></CardContent></Card>
-            <Card><CardHeader className="pb-2"><CardDescription>Pending</CardDescription></CardHeader>
-              <CardContent><div className="text-2xl font-bold text-yellow-600">{formatCurrency(stats.pending)}</div></CardContent></Card>
-            <Card><CardHeader className="pb-2"><CardDescription>Overdue</CardDescription></CardHeader>
-              <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(stats.overdue)}</div></CardContent></Card>
+            <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Total Invoiced</CardDescription>
+                <DollarSign className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
+              </CardHeader>
+              <CardContent className="px-6 pb-6">
+                <div className="text-2xl font-semibold tracking-tight">{formatCurrency(stats.total)}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription className="text-sm font-medium text-muted-foreground text-emerald-700/60 mb-1">Paid Volume</CardDescription>
+                <CheckCircle className="h-5 w-5 text-emerald-600 transition-transform group-hover:scale-110" />
+              </CardHeader>
+              <CardContent className="px-6 pb-6">
+                <div className="text-2xl font-bold">{formatCurrency(stats.paid)}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription className="text-sm font-medium text-muted-foreground text-amber-700/60 mb-1">Pending Ledger</CardDescription>
+                <Clock className="h-5 w-5 text-amber-600 transition-transform group-hover:scale-110" />
+              </CardHeader>
+              <CardContent className="px-6 pb-6">
+                <div className="text-2xl font-bold">{formatCurrency(stats.pending)}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardDescription className="text-sm font-medium text-muted-foreground text-rose-700/60 mb-1">Overdue Claims</CardDescription>
+                <AlertTriangle className="h-5 w-5 text-rose-600 transition-transform group-hover:scale-110" />
+              </CardHeader>
+              <CardContent className="px-6 pb-6">
+                <div className="text-2xl font-bold">{formatCurrency(stats.overdue)}</div>
+              </CardContent>
+            </Card>
           </>
         )}
       </div>
 
       {/* Filters & Table */}
-      <Card>
-        <CardHeader><CardTitle>All Invoices</CardTitle></CardHeader>
+      <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card overflow-hidden">
+        <CardHeader className="p-8 border-b">
+          <CardTitle className="text-2xl font-bold">Billing History</CardTitle>
+          <CardDescription className="font-medium">Complete audit trail of all issued and projected invoices</CardDescription>
+        </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
             <div className="flex flex-1 gap-4">
@@ -394,7 +430,7 @@ export default function InvoicesPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
-        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl bg-card">
+        <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden rounded-2xl border-none shadow-2xl bg-card">
           <div className="bg-primary p-10 text-primary-foreground relative overflow-hidden">
             {/* Background pattern */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl" />
@@ -405,7 +441,7 @@ export default function InvoicesPage() {
                 <Badge className="mb-4 bg-white/20 hover:bg-white/30 text-white border-none px-3 py-1 text-xs font-bold uppercase tracking-wider">
                   Invoice Details
                 </Badge>
-                <DialogTitle className="text-4xl font-black tracking-tighter mb-1">
+                <DialogTitle className="text-4xl font-bold tracking-tight mb-1">
                   INV-{String(selectedInvoice?.id ?? "").padStart(4, "0")}
                 </DialogTitle>
                 <p className="text-primary-foreground/70 font-medium flex items-center gap-2">
@@ -414,11 +450,11 @@ export default function InvoicesPage() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Total Amount</p>
-                <p className="text-5xl font-black tabular-nums tracking-tighter">
+                <p className="text-sm font-medium text-muted-foreground opacity-60 mb-1">Total Amount</p>
+                <p className="text-5xl font-bold tabular-nums tracking-tight">
                   {selectedInvoice && formatCurrency(selectedInvoice.amount)}
                 </p>
-                <Badge variant="outline" className={cn("mt-4 px-4 py-1 rounded-full font-bold uppercase tracking-tighter text-[10px]",
+                <Badge variant="outline" className={cn("mt-4 px-4 py-1 rounded-full font-bold uppercase tracking-tight text-[10px]",
                   statusConfig[selectedInvoice?.status?.toUpperCase() ?? "DRAFT"]?.className
                 )}>
                   {selectedInvoice?.status}
@@ -432,7 +468,7 @@ export default function InvoicesPage() {
               <div className="grid grid-cols-2 gap-10">
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Client Information</p>
+                    <p className="text-sm font-medium text-muted-foreground text-muted-foreground mb-3">Client Information</p>
                     <div className="flex items-start gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50">
                       <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Receipt className="h-6 w-6 text-primary" />
@@ -446,7 +482,7 @@ export default function InvoicesPage() {
                 </div>
                 <div className="space-y-4 text-right">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Payment Terms</p>
+                    <p className="text-sm font-medium text-muted-foreground text-muted-foreground mb-3">Payment Terms</p>
                     <div className="space-y-1">
                       <p className="font-bold text-lg">Due by {formatDate(selectedInvoice.dueDate)}</p>
                       <p className="text-sm text-muted-foreground">Late payment fees may apply after due date.</p>
@@ -457,7 +493,7 @@ export default function InvoicesPage() {
 
               {/* Line Items */}
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Invoice Items</p>
+                <p className="text-sm font-medium text-muted-foreground text-muted-foreground mb-4">Invoice Items</p>
                 <div className="rounded-2xl border border-border/50 overflow-hidden">
                   <Table>
                     <TableHeader className="bg-muted/50">
@@ -475,7 +511,7 @@ export default function InvoicesPage() {
                             <TableCell className="font-medium">{item.product?.name || item.description || "Service Rendered"}</TableCell>
                             <TableCell className="text-center font-bold">{item.quantity || 1}</TableCell>
                             <TableCell className="text-right tabular-nums">{formatCurrency(item.unitPrice || selectedInvoice.amount)}</TableCell>
-                            <TableCell className="text-right font-black tabular-nums">{formatCurrency((item.quantity || 1) * (item.unitPrice || selectedInvoice.amount))}</TableCell>
+                            <TableCell className="text-right font-bold tabular-nums">{formatCurrency((item.quantity || 1) * (item.unitPrice || selectedInvoice.amount))}</TableCell>
                           </TableRow>
                         ))
                       ) : (
@@ -483,7 +519,7 @@ export default function InvoicesPage() {
                           <TableCell className="font-medium">General Service / Product</TableCell>
                           <TableCell className="text-center font-bold">1</TableCell>
                           <TableCell className="text-right tabular-nums">{formatCurrency(selectedInvoice.amount)}</TableCell>
-                          <TableCell className="text-right font-black tabular-nums">{formatCurrency(selectedInvoice.amount)}</TableCell>
+                          <TableCell className="text-right font-bold tabular-nums">{formatCurrency(selectedInvoice.amount)}</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
@@ -503,15 +539,15 @@ export default function InvoicesPage() {
                     <span className="font-bold tabular-nums">{formatCurrency(selectedInvoice.amount * 0.18)}</span>
                   </div>
                   <div className="pt-3 border-t border-border flex justify-between">
-                    <span className="font-black uppercase tracking-tighter">Total Due</span>
-                    <span className="font-black text-xl tabular-nums text-primary">{formatCurrency(selectedInvoice.amount * 1.18)}</span>
+                    <span className="font-bold uppercase tracking-tight">Total Due</span>
+                    <span className="font-bold text-xl tabular-nums text-primary">{formatCurrency(selectedInvoice.amount * 1.18)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-4 pt-4 sticky bottom-0 bg-card py-4 border-t border-border/50">
                 {user?.role === "CLIENT" && selectedInvoice.status?.toUpperCase() !== "PAID" && (
-                  <Button className="flex-1 font-black h-14 rounded-2xl text-lg shadow-lg glow">Pay Now</Button>
+                  <Button className="flex-1 font-bold h-14 rounded-2xl text-lg shadow-lg glow">Pay Now</Button>
                 )}
                 <Button variant="outline" className="flex-1 font-bold h-14 rounded-2xl gap-2 border-2" onClick={() => window.print()}>
                   <Download className="h-5 w-5" /> Download PDF
@@ -529,12 +565,12 @@ export default function InvoicesPage() {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!invoiceToDelete} onOpenChange={(open) => !open && setInvoiceToDelete(null)}>
-        <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl">
+        <AlertDialogContent className="rounded-2xl p-10 border-none shadow-2xl">
           <AlertDialogHeader>
             <div className="h-16 w-16 bg-rose-100 rounded-2xl flex items-center justify-center mb-6">
                <Trash2 className="h-8 w-8 text-rose-600" />
             </div>
-            <AlertDialogTitle className="text-3xl font-black tracking-tighter">Delete Invoice?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-semibold tracking-tight">Delete Invoice?</AlertDialogTitle>
             <AlertDialogDescription className="text-lg font-medium text-muted-foreground py-2">
               Are you sure you want to delete <span className="text-foreground font-bold">INV-{String(invoiceToDelete ?? "").padStart(4, "0")}</span>? 
               This action is permanent and will remove all associated item records and stock adjustments.
@@ -545,7 +581,7 @@ export default function InvoicesPage() {
             <AlertDialogAction 
               onClick={handleDeleteInvoice}
               disabled={isDeleting}
-              className="h-14 rounded-2xl font-black flex-1 bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200"
+              className="h-14 rounded-2xl font-bold flex-1 bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200"
             >
               {isDeleting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Yes, Delete It"}
             </AlertDialogAction>

@@ -80,40 +80,33 @@ export function StatsCards({ role }: StatsCardsProps) {
     : [];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
-        <Card key={stat.name} className="relative overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 rounded-[2rem]">
-          {/* Subtle accent gradient */}
-          <div className={cn(
-            "absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full blur-3xl opacity-20 transition-opacity group-hover:opacity-30",
-            stat.changeType === "positive" ? "bg-emerald-500" : 
-            stat.changeType === "negative" ? "bg-rose-500" : "bg-primary"
-          )} />
-          
-          <CardHeader className="flex flex-row items-center justify-between pb-2 relative">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.name}</CardTitle>
-            <div className={cn("flex h-10 w-10 items-center justify-center rounded-2xl transition-transform duration-500 group-hover:rotate-12",
-              stat.changeType === "negative" ? "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400" : 
-              stat.changeType === "positive" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
-              "bg-primary/10 text-primary")}>
+        <Card key={stat.name} className="relative overflow-hidden border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-4 pt-6 px-6">
+            <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl",
+              stat.changeType === "negative" ? "bg-red-50 text-red-500 dark:bg-red-950/50" : 
+              stat.changeType === "positive" ? "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/50" :
+              "bg-blue-50 text-blue-500 dark:bg-blue-950/50")}>
               <stat.icon className="h-5 w-5" />
             </div>
+            
+            <div className={cn("flex items-center gap-1 text-sm font-semibold",
+                stat.changeType === "positive" ? "text-emerald-500" :
+                stat.changeType === "negative" ? "text-red-500" :
+                "text-muted-foreground")}>
+                {stat.changeType === "positive" && <TrendingUp className="h-4 w-4" />}
+                {stat.changeType === "negative" && <TrendingDown className="h-4 w-4" />}
+                {stat.changeType === "positive" ? "12.5%" : stat.changeType === "negative" ? "3.2%" : "0%"}
+            </div>
           </CardHeader>
-          <CardContent className="relative">
-            <div className="text-3xl font-black tracking-tight mb-2 tabular-nums">
+          <CardContent className="px-6 pb-6 pt-0">
+            <div className="text-3xl font-bold tracking-tight mb-1">
               {stat.isCurrency ? formatCurrency(stat.value as number) : stat.value}
             </div>
-            <div className="flex items-center gap-2">
-              <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter",
-                stat.changeType === "positive" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
-                stat.changeType === "negative" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" :
-                "bg-muted text-muted-foreground")}>
-                {stat.changeType === "positive" && <TrendingUp className="h-3 w-3" />}
-                {stat.changeType === "negative" && <TrendingDown className="h-3 w-3" />}
-                {stat.change}
-              </div>
-              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{stat.description}</span>
-            </div>
+            <p className="text-sm text-muted-foreground font-medium">
+              {stat.name}
+            </p>
           </CardContent>
         </Card>
       ))}

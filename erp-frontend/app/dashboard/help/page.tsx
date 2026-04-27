@@ -122,7 +122,7 @@ export default function HelpPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold tracking-tight">Help & Support</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Help & Support</h1>
         <p className="text-muted-foreground mt-2">
           Find answers to common questions or get in touch with our support team
         </p>

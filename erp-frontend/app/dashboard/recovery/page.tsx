@@ -14,6 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -46,8 +53,10 @@ import {
   XCircle,
   Brain,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface RecoveryCase {
   id: string;
@@ -78,20 +87,28 @@ export default function RecoveryPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [recoveryCases, setRecoveryCases] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBulkSending, setIsBulkSending] = useState(false);
+  const [showAiDialog, setShowAiDialog] = useState(false);
+  const [aiInsights, setAiInsights] = useState<any[]>([]);
 
   useEffect(() => {
-    import("@/lib/api").then(({ recoveryApi }) => {
-      recoveryApi.getAll()
-        .then((data) => setRecoveryCases(data))
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-    });
+    async function loadData() {
+      try {
+        const { recoveryApi } = await import("@/lib/api");
+        const data = await recoveryApi.getAll();
+        setRecoveryCases(data);
+      } catch (err) {
+        console.error("Recovery Load Error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
   const totalOverdue = recoveryCases.reduce((acc, c) => acc + (c.invoice?.amount || 0), 0);
   const highRiskCount = recoveryCases.filter((c) => (c.invoice?.client?.riskIndex || 0) >= 60).length;
   
-  // Calculate average days overdue
   const avgDaysOverdue = recoveryCases.length > 0 
     ? Math.round(
         recoveryCases.reduce((acc, c) => {
@@ -104,17 +121,35 @@ export default function RecoveryPage() {
 
   const filteredCases = recoveryCases.filter((c) => {
     const matchesSearch =
-      (c.invoice?.id?.toString() || "").includes(searchQuery) ||
+      (c.invoice?.invoiceNumber || c.invoice?.id?.toString() || "").includes(searchQuery) ||
       (c.invoice?.client?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     if (activeTab === "all") return matchesSearch;
     return matchesSearch && c.status.toLowerCase() === activeTab;
   });
 
+  const handleBulkReminders = async () => {
+    setIsBulkSending(true);
+    try {
+      const { invoicesApi } = await import("@/lib/api");
+      const pending = recoveryCases.filter(c => c.status === "pending" || c.status === "PENDING");
+      if (pending.length === 0) {
+        toast.info("No pending cases to remind.");
+        return;
+      }
+      await Promise.all(pending.map(c => invoicesApi.sendReminder(c.invoice.id)));
+      toast.success(`Successfully sent ${pending.length} smart reminders`);
+    } catch {
+      toast.error("Failed to execute bulk reminder sequence");
+    } finally {
+      setIsBulkSending(false);
+    }
+  };
+
   const getRiskColor = (score: number) => {
-    if (score >= 70) return "text-red-600 bg-red-100";
-    if (score >= 40) return "text-amber-600 bg-amber-100";
-    return "text-green-600 bg-green-100";
+    if (score >= 70) return "text-red-600 bg-red-100 dark:bg-red-900/20";
+    if (score >= 40) return "text-amber-600 bg-amber-100 dark:bg-amber-900/20";
+    return "text-green-600 bg-green-100 dark:bg-green-900/20";
   };
 
   return (
@@ -122,162 +157,168 @@ export default function RecoveryPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
-              <RefreshCw className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Recovery Cases</h1>
-              <p className="text-muted-foreground">
-                Turning debt into actionable recovery cases
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Recovery Intelligence</h1>
+            <p className="text-sm text-muted-foreground">Predictive delinquency management and automated debt collection</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-2 font-medium"
+              onClick={async () => {
+                setShowAiDialog(true);
+                const { aiApi } = await import("@/lib/api");
+                aiApi.getInsights("RECOVERY_AGENT").then(setAiInsights).catch(console.error);
+              }}
+            >
               <Brain className="h-4 w-4" />
-              AI Recommendations
+              AI Strategy
             </Button>
-            <Button className="gap-2">
-              <Send className="h-4 w-4" />
+            <Button 
+              className="gap-2 font-medium"
+              onClick={handleBulkReminders}
+              disabled={isBulkSending}
+            >
+              {isBulkSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Send Bulk Reminders
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="border-2 border-red-200 bg-red-50/50">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription className="font-medium text-red-700">Total Overdue</CardDescription>
-              <DollarSign className="h-5 w-5 text-red-600" />
+              <CardDescription>Total Overdue</CardDescription>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-700">
-                ${totalOverdue.toLocaleString()}
-              </div>
-              <p className="text-sm text-red-600/70 mt-1">
-                {recoveryCases.length} active cases
-              </p>
+              <div className="text-2xl font-bold">Rwf {totalOverdue.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-1">{recoveryCases.length} active cases</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription className="font-medium">High Risk</CardDescription>
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <CardDescription>High Risk</CardDescription>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{highRiskCount}</div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Risk score {">"}60%
-              </p>
+              <div className="text-2xl font-bold">{highRiskCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Risk score &gt; 60%</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription className="font-medium">Avg Days Overdue</CardDescription>
-              <Clock className="h-5 w-5 text-blue-600" />
+              <CardDescription>Avg Days Overdue</CardDescription>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{avgDaysOverdue}</div>
-              <p className="text-sm text-muted-foreground mt-1">
-                days on average
-              </p>
+              <div className="text-2xl font-bold">{avgDaysOverdue} <span className="text-sm font-normal">days</span></div>
             </CardContent>
           </Card>
-          <Card className="border-2 border-green-200 bg-green-50/50">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription className="font-medium text-green-700">Recovery Rate</CardDescription>
-              <TrendingUp className="h-5 w-5 text-green-600" />
+              <CardDescription>Recovery Rate</CardDescription>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-700">72%</div>
-              <p className="text-sm text-green-600/70 mt-1">
-                +8% this month
-              </p>
+              <div className="text-2xl font-bold">72%</div>
+              <p className="text-xs text-muted-foreground mt-1">+8% this month</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Overdue Invoices Table */}
-        <Card>
-          <CardHeader>
+        <Card className="border border-border/50 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <CardTitle>Overdue Cases</CardTitle>
-                <CardDescription>
-                  Manage and track recovery operations
-                </CardDescription>
+                <CardTitle className="text-lg font-semibold">Recovery Ledger</CardTitle>
+                <CardDescription>Prioritized debt collection pipeline</CardDescription>
               </div>
-              <div className="relative w-full md:w-64">
+              <div className="relative w-full md:w-80">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search cases..."
+                  placeholder="Search case, client or invoice..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-10 h-12 rounded-2xl bg-muted/40 border-none font-bold"
                 />
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="contacted">Contacted</TabsTrigger>
-                <TabsTrigger value="promised">Promised</TabsTrigger>
-                <TabsTrigger value="failed">Failed</TabsTrigger>
-              </TabsList>
+          <CardContent className="p-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="px-8 pt-4 bg-muted/5 border-b pb-0">
+                <TabsList className="bg-transparent border-b-0 gap-8 h-12 p-0">
+                  {["all", "pending", "contacted", "promised", "failed"].map((tab) => (
+                    <TabsTrigger 
+                      key={tab} 
+                      value={tab} 
+                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 font-bold uppercase text-[10px] tracking-widest"
+                    >
+                      {tab}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
 
-              <TabsContent value={activeTab}>
-                <div className="rounded-lg border">
+              <TabsContent value={activeTab} className="mt-0">
+                <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Case/Inv</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Overdue</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Assigned To</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                    <TableHeader className="bg-muted/10">
+                      <TableRow className="hover:bg-transparent border-none">
+                        <TableHead className="pl-8 py-5 font-bold uppercase text-[10px] tracking-widest">Case ID</TableHead>
+                        <TableHead className="py-5 font-bold uppercase text-[10px] tracking-widest">Client Entity</TableHead>
+                        <TableHead className="py-5 font-bold uppercase text-[10px] tracking-widest text-right">Liability</TableHead>
+                        <TableHead className="py-5 font-bold uppercase text-[10px] tracking-widest">Overdue</TableHead>
+                        <TableHead className="py-5 font-bold uppercase text-[10px] tracking-widest text-center">Risk Index</TableHead>
+                        <TableHead className="py-5 font-bold uppercase text-[10px] tracking-widest">Status</TableHead>
+                        <TableHead className="pr-8 py-5 font-bold uppercase text-[10px] tracking-widest text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredCases.map((c) => {
+                      {isLoading ? (
+                        <TableRow><TableCell colSpan={7} className="h-64 text-center font-bold animate-pulse text-muted-foreground">Syncing Recovery Intelligence...</TableCell></TableRow>
+                      ) : filteredCases.length === 0 ? (
+                        <TableRow><TableCell colSpan={7} className="h-64 text-center text-muted-foreground italic font-medium">No active cases match your filters.</TableCell></TableRow>
+                      ) : filteredCases.map((c) => {
                         const daysOverdue = c.invoice?.dueDate 
                           ? Math.ceil((new Date().getTime() - new Date(c.invoice.dueDate).getTime()) / (1000 * 3600 * 24))
                           : 0;
                         const riskScore = c.invoice?.client?.riskIndex || 0;
-                        const agent = c.assignedAgent || "System Agent";
+                        const agent = c.assignedAgent || "System Intelligence";
 
                         return (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-mono font-medium">
-                            INV-{c.invoice?.id?.toString().padStart(3, '0')}
+                        <TableRow key={c.id} className="group border-border/30 hover:bg-muted/30 transition-all">
+                          <TableCell className="pl-8 py-6 font-mono font-bold text-xs text-muted-foreground">
+                            {c.invoice?.invoiceNumber || `INV-${String(c.invoice?.id).padStart(3, '0')}`}
                           </TableCell>
                           <TableCell>
-                            <div>
-                              <p className="font-medium">{c.invoice?.client?.name || 'Unknown'}</p>
-                              <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                {c.invoice?.client?.email || 'N/A'}
-                              </p>
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center font-bold text-[10px] text-primary">
+                                {(c.invoice?.client?.name || 'U').charAt(0)}
+                              </div>
+                              <div className="min-w-0 max-w-[200px]">
+                                <p className="font-bold truncate">{c.invoice?.client?.name || 'Unknown Entity'}</p>
+                                <p className="text-[10px] font-bold uppercase text-muted-foreground truncate">
+                                  {c.invoice?.client?.email || 'OFFLINE'}
+                                </p>
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            ${(c.invoice?.amount || 0).toLocaleString()}
+                          <TableCell className="text-right">
+                            <span className="font-bold tabular-nums">Rwf {(c.invoice?.amount || 0).toLocaleString()}</span>
                           </TableCell>
                           <TableCell>
-                            <span className="text-red-600 font-medium whitespace-nowrap">
-                              {daysOverdue} days
+                            <span className="text-rose-600 font-bold text-xs uppercase tracking-tight flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {daysOverdue} days
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <div
                               className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1 text-[10px] font-bold",
                                 getRiskColor(riskScore)
                               )}
                             >
@@ -285,50 +326,42 @@ export default function RecoveryPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                             <div className="flex items-center gap-2">
-                               <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
-                                 {agent.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                               </div>
-                               <span className="text-sm">{agent}</span>
-                             </div>
-                          </TableCell>
-                          <TableCell>
                             <Badge
                               variant="outline"
                               className={cn(
-                                "font-medium whitespace-nowrap capitalize",
+                                "font-bold text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-lg border-2 shadow-sm",
                                 statusConfig[c.status.toLowerCase()]?.color || statusConfig['pending'].color
                               )}
                             >
                               {statusConfig[c.status.toLowerCase()]?.label || c.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right pr-8">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted transition-colors">
+                                  <MoreHorizontal className="h-5 w-5" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Mail className="h-4 w-4 mr-2" />
+                              <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] shadow-2xl border-border/50">
+                                <DropdownMenuLabel className="text-sm font-medium text-muted-foreground text-muted-foreground px-3 py-2">Ops Command</DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-muted" />
+                                <DropdownMenuItem className="rounded-xl px-3 py-2 font-bold focus:bg-primary/5 focus:text-primary cursor-pointer gap-3" onClick={() => toast.success("Manual reminder dispatched")}>
+                                  <Mail className="h-4 w-4" />
                                   Send Reminder
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Phone className="h-4 w-4 mr-2" />
+                                <DropdownMenuItem className="rounded-xl px-3 py-2 font-bold focus:bg-primary/5 focus:text-primary cursor-pointer gap-3">
+                                  <Phone className="h-4 w-4" />
                                   Log Call
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Clock className="h-4 w-4 mr-2" />
+                                <DropdownMenuItem className="rounded-xl px-3 py-2 font-bold focus:bg-primary/5 focus:text-primary cursor-pointer gap-3">
+                                  <Clock className="h-4 w-4" />
                                   Update Status
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">
-                                  <AlertTriangle className="h-4 w-4 mr-2" />
-                                  Escalate
+                                <DropdownMenuSeparator className="bg-muted" />
+                                <DropdownMenuItem className="rounded-xl px-3 py-2 font-bold focus:bg-destructive/10 focus:text-destructive text-destructive cursor-pointer gap-3">
+                                  <AlertTriangle className="h-4 w-4" />
+                                  Escalate Case
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -343,6 +376,69 @@ export default function RecoveryPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Strategy Dialog */}
+      <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
+        <DialogContent className="sm:max-w-[650px] rounded-2xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-foreground text-background p-10">
+            <DialogHeader>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground mb-6 shadow-xl shadow-primary/40">
+                <Brain className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-2xl font-semibold tracking-tight">Recovery Intelligence</DialogTitle>
+              <DialogDescription className="text-white/60 font-medium text-base">
+                Machine learning analysis of payment patterns and behavioral risk factors.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-10 space-y-6 max-h-[60vh] overflow-y-auto">
+            {aiInsights.length > 0 ? (
+              <div className="grid gap-6">
+                {aiInsights.map((insight, idx) => (
+                  <div key={idx} className="group p-6 rounded-[2rem] border-2 border-muted hover:border-primary/20 bg-muted/20 transition-all">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Zap className="h-4 w-4 text-primary" />
+                        </div>
+                        <h4 className="font-bold text-primary uppercase text-[10px] tracking-widest">{insight.type || "Strategy"}</h4>
+                      </div>
+                      <Badge variant="outline" className={cn(
+                        "text-[9px] font-bold rounded-lg border-2",
+                        insight.priority === "HIGH" ? "border-rose-100 bg-rose-50 text-rose-600" : "border-amber-100 bg-amber-50 text-amber-600"
+                      )}>{insight.priority}</Badge>
+                    </div>
+                    <h5 className="text-xl font-bold mb-2 tracking-tight">{insight.title}</h5>
+                    <p className="text-sm font-medium text-muted-foreground leading-relaxed mb-6">{insight.description}</p>
+                    <Button 
+                      className="w-full rounded-2xl h-12 font-bold gap-2 transition-all active:scale-95"
+                      onClick={() => {
+                        // Mock implementation: Update status of the first matching case for this client
+                        const caseId = recoveryCases.find(c => c.invoice?.client?.name === insight.title.split(":")[0])?.id;
+                        if (caseId) {
+                          setRecoveryCases(prev => prev.map(c => c.id === caseId ? { ...c, status: 'contacted' } : c));
+                        }
+                        toast.success(`Strategy Implemented: ${insight.title}`);
+                        setShowAiDialog(false);
+                      }}
+                    >
+                      Implement Recommendation
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 flex flex-col items-center justify-center gap-6 text-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary opacity-20" />
+                <div>
+                  <p className="font-bold text-xl mb-1">Synthesizing Accounts...</p>
+                  <p className="text-muted-foreground font-medium">Crunching historical settlement data</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </RoleGate>
   );
 }

@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 
 import { paymentsApi } from "@/lib/api";
 import { useEffect } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 
 const statusConfig = {
@@ -69,6 +70,7 @@ const methodConfig = {
 };
 
 export default function PaymentsPage() {
+  const { formatCurrency } = useCurrency();
   const [payments, setPayments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -115,63 +117,70 @@ export default function PaymentsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
-        <p className="text-muted-foreground">
-          Track and manage all incoming payments
-        </p>
+      <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Payments Ledger</h1>
+          <p className="text-sm text-muted-foreground">Real-time tracking of capital inflows and settlement status</p>
+        </div>
+        <Button variant="outline" className="h-12 px-6 rounded-2xl font-bold gap-2 border-2 hover:bg-primary/5 transition-all">
+           <Download className="h-5 w-5" /> Export Statements
+        </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Received</CardDescription>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Total Received</CardDescription>
+            <DollarSign className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-semibold tracking-tight">
+              {formatCurrency(stats.total)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardDescription className="text-sm font-medium text-muted-foreground text-emerald-700/60 mb-1">Completed</CardDescription>
+            <CheckCircle className="h-5 w-5 text-emerald-600 transition-transform group-hover:scale-110" />
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
             <div className="text-2xl font-bold">
-              ${stats.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              {formatCurrency(stats.completed)}
             </div>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Completed</CardDescription>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-amber-700/60 mb-1">Pending</CardDescription>
+            <Clock className="h-5 w-5 text-amber-600 transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ${stats.completed.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.pending)}
             </div>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Pending</CardDescription>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-indigo-700/60 mb-1">Inflow Volume</CardDescription>
+            <TrendingUp className="h-5 w-5 text-indigo-600 transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              ${stats.pending.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>This Month</CardDescription>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.thisMonth} payments</div>
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-bold">{stats.thisMonth} <span className="text-sm font-bold uppercase">Payments</span></div>
           </CardContent>
         </Card>
       </div>
 
       {/* Payments Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
+      <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card overflow-hidden">
+        <CardHeader className="p-8 border-b">
+          <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
+          <CardDescription className="font-medium">All incoming settlements and payment statuses</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
@@ -219,8 +228,10 @@ export default function PaymentsPage() {
               </TableHeader>
               <TableBody>
                 {filteredPayments.map((payment) => {
-                  const status = statusConfig[payment.status as keyof typeof statusConfig];
-                  const method = methodConfig[payment.method as keyof typeof methodConfig];
+                  const statusKey = (payment.status || 'pending').toLowerCase();
+                  const status = statusConfig[statusKey as keyof typeof statusConfig] || statusConfig.pending;
+                  const methodKey = (payment.method || 'bank_transfer').toLowerCase();
+                  const method = methodConfig[methodKey as keyof typeof methodConfig] || methodConfig.bank_transfer;
                   const StatusIcon = status.icon;
                   const MethodIcon = method.icon;
                   return (
@@ -233,7 +244,7 @@ export default function PaymentsPage() {
                       </TableCell>
                       <TableCell>{payment.invoice?.client?.name || payment.client || 'N/A'}</TableCell>
                       <TableCell className="font-medium">
-                        ${payment.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        {formatCurrency(payment.amount)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">

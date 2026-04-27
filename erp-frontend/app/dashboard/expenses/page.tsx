@@ -186,12 +186,10 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground">
-            Track and categorize all business expenses
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">Expenditure Ledger</h1>
+          <p className="text-sm text-muted-foreground">Real-time tracking of capital outflows and operational costs</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -268,55 +266,63 @@ export default function ExpensesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Total Expenses</CardDescription>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Total Expenses</CardDescription>
+            <DollarSign className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-semibold tracking-tight">
+              {formatCurrency(stats.total)}
+            </div>
+            
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardDescription className="text-sm font-medium text-muted-foreground text-emerald-700/60 mb-1">Approved</CardDescription>
+            <CheckCircle className="h-5 w-5 text-emerald-600 transition-transform group-hover:scale-110" />
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
             <div className="text-2xl font-bold">
-              ${stats.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              {formatCurrency(stats.approved)}
             </div>
+            
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Approved</CardDescription>
-            <TrendingDown className="h-4 w-4 text-green-600" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-amber-700/60 mb-1">Pending Approval</CardDescription>
+            <Receipt className="h-5 w-5 text-amber-600 transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ${stats.approved.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.pending)}
             </div>
+            
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Pending Approval</CardDescription>
-            <Receipt className="h-4 w-4 text-yellow-600" />
+            <CardDescription className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Entry Volume</CardDescription>
+            <TrendingDown className="h-5 w-5 text-muted-foreground transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              ${stats.pending.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>This Month</CardDescription>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.thisMonth} expenses</div>
+          <CardContent className="px-6 pb-6">
+            <div className="text-2xl font-semibold tracking-tight">{stats.thisMonth} <span className="text-sm font-bold uppercase">Entries</span></div>
+            
           </CardContent>
         </Card>
       </div>
 
       {/* Expenses Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Expenses</CardTitle>
+      <Card className="border border-border/50 shadow-sm rounded-2xl bg-white dark:bg-card overflow-hidden">
+        <CardHeader className="p-8 border-b">
+          <CardTitle className="text-2xl font-bold">Audit Ledger</CardTitle>
+          <CardDescription className="font-medium">All categorized business expenditures and settlement statuses</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
@@ -448,7 +454,7 @@ export default function ExpensesPage() {
           <DialogHeader className="bg-primary p-8 text-primary-foreground">
             <div className="flex justify-between items-start">
               <div className="text-left">
-                <DialogTitle className="text-3xl font-black mb-1">Expense Voucher</DialogTitle>
+                <DialogTitle className="text-3xl font-bold mb-1">Expense Voucher</DialogTitle>
                 <DialogDescription className="text-primary-foreground/80 font-medium">
                   {selectedExpense?.id}
                 </DialogDescription>
@@ -465,8 +471,8 @@ export default function ExpensesPage() {
             <div className="p-8 space-y-12 max-h-[70vh] overflow-y-auto font-geist">
               {/* Core Details */}
               <div className="flex flex-col items-center justify-center p-8 bg-muted/20 rounded-3xl border border-dashed text-center">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Total Expenditure</p>
-                 <h2 className="text-5xl font-black tracking-tighter text-primary">
+                 <p className="text-sm font-medium text-muted-foreground text-muted-foreground mb-2">Total Expenditure</p>
+                 <h2 className="text-5xl font-bold tracking-tight text-primary">
                     {formatCurrency(selectedExpense.amount)}
                  </h2>
                  <p className="mt-4 text-sm font-bold bg-muted px-4 py-1 rounded-full border">
@@ -476,7 +482,7 @@ export default function ExpensesPage() {
 
               <div className="grid grid-cols-2 gap-12">
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vendor Details</p>
+                  <p className="text-sm font-medium text-muted-foreground text-muted-foreground">Vendor Details</p>
                   <div className="flex items-start gap-3">
                     <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                       <Building className="h-5 w-5 text-primary" />
@@ -488,7 +494,7 @@ export default function ExpensesPage() {
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filing Info</p>
+                  <p className="text-sm font-medium text-muted-foreground text-muted-foreground">Filing Info</p>
                   <div className="space-y-1 text-sm">
                     <p className="flex justify-between gap-4"><span className="text-muted-foreground">Transaction Date:</span> <span className="font-bold">{formatDate(selectedExpense.date)}</span></p>
                     <div className="flex justify-end pt-2">
@@ -502,7 +508,7 @@ export default function ExpensesPage() {
 
               {/* Compliance & Receipt Section */}
               <div className="space-y-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <p className="text-sm font-medium text-muted-foreground text-muted-foreground flex items-center gap-2">
                   <Receipt className="h-3 w-3" />
                   Compliance Checklist
                 </p>
@@ -514,7 +520,7 @@ export default function ExpensesPage() {
                       </div>
                       Tax Receipt Attached
                     </div>
-                    {selectedExpense.receipt && <Button variant="link" className="text-xs font-black p-0 h-auto">VIEW PDF</Button>}
+                    {selectedExpense.receipt && <Button variant="link" className="text-xs font-bold p-0 h-auto">VIEW PDF</Button>}
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
                     <div className="flex items-center gap-3 text-sm font-bold">
@@ -530,7 +536,7 @@ export default function ExpensesPage() {
               <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10">
                  <div className="flex items-center gap-2 mb-4">
                     <History className="h-4 w-4 text-primary" />
-                    <p className="text-[10px] font-black uppercase tracking-widest">Processing History</p>
+                    <p className="text-sm font-medium text-muted-foreground">Processing History</p>
                  </div>
                  <div className="space-y-6 pl-2 border-l-2 border-primary/20 text-left">
                     <div className="relative pl-6">
@@ -549,10 +555,10 @@ export default function ExpensesPage() {
               </div>
 
               <div className="flex gap-4 pt-4 pb-8">
-                 <Button className="flex-1 font-black h-12 rounded-2xl shadow-xl shadow-primary/20">
+                 <Button className="flex-1 font-bold h-12 rounded-2xl shadow-xl shadow-primary/20">
                     Process Reimbursement
                  </Button>
-                 <Button variant="outline" className="flex-1 font-black h-12 rounded-2xl border-border bg-background" asChild>
+                 <Button variant="outline" className="flex-1 font-bold h-12 rounded-2xl border-border bg-background" asChild>
                     <Link href={`/dashboard/expenses/${selectedExpense?.id}/edit`}>
                        Edit Entry
                     </Link>
