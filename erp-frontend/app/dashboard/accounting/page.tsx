@@ -101,7 +101,7 @@ export default function AccountingPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter">VAT & Tax Compliance</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tax Compliance</h1>
           <p className="text-muted-foreground font-medium">Real-time Rwandan tax liability monitoring (18% Flat Rate)</p>
         </div>
         <div className="flex gap-3">
@@ -258,7 +258,7 @@ export default function AccountingPage() {
                   </div>
                   <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
                </div>
-               <h3 className="text-lg font-black mb-1">Bank Reconciliation</h3>
+               <h1 className="text-3xl font-bold tracking-tight">Bank Reconciliation</h1>
                <p className="text-xs text-muted-foreground font-medium">Match {taxRecords.length} internal records with bank statements.</p>
             </Card>
 

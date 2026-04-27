@@ -18,6 +18,9 @@ public class RecoveryController {
 
     @GetMapping
     public ResponseEntity<List<RecoveryCase>> getCases(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
         // Recovery Agents only see their assigned cases
         if (user.getRole() == User.Role.RECOVERY_AGENT) {
             return ResponseEntity.ok(recoveryCaseRepository.findByAssignedAgentId(user.getId()));

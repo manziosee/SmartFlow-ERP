@@ -33,7 +33,8 @@ public class InvoiceController {
         return invoiceRepository.findById(id).map(invoice -> {
             if (authentication != null && authentication.getPrincipal() instanceof com.smartflow.erp.auth.User) {
                 com.smartflow.erp.auth.User user = (com.smartflow.erp.auth.User) authentication.getPrincipal();
-                if (user.getRole() == com.smartflow.erp.auth.User.Role.CLIENT && !id.equals(user.getClientId())) {
+                if (user.getRole() == com.smartflow.erp.auth.User.Role.CLIENT && 
+                    (invoice.getClient() == null || !invoice.getClient().getId().equals(user.getClientId()))) {
                     return ResponseEntity.status(403).<Invoice>build();
                 }
             }
@@ -110,7 +111,36 @@ public class InvoiceController {
                 }
             }
         }
-        
         return ResponseEntity.ok(invoiceRepository.save(invoice));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInvoice(@PathVariable Long id) {
+        return invoiceRepository.findById(id).map(invoice -> {
+            invoiceRepository.delete(invoice);
+            return ResponseEntity.ok().<Void>build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<Invoice> cancelInvoice(@PathVariable Long id) {
+        return invoiceRepository.findById(id).map(invoice -> {
+            invoice.setStatus(Invoice.Status.CANCELLED);
+            return ResponseEntity.ok(invoiceRepository.save(invoice));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Invoice> updateInvoice(@PathVariable Long id, @RequestBody Invoice details) {
+        return invoiceRepository.findById(id).map(invoice -> {
+            invoice.setAmount(details.getAmount());
+            invoice.setStatus(details.getStatus());
+            invoice.setDueDate(details.getDueDate());
+            // Update items if provided
+            if (details.getItems() != null) {
+                invoice.setItems(details.getItems());
+            }
+            return ResponseEntity.ok(invoiceRepository.save(invoice));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

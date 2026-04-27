@@ -136,7 +136,7 @@ export default function EditInvoicePage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-4xl font-black tracking-tighter">Edit Record</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Edit Record</h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
                Modifying <span className="text-foreground font-bold">{formData.invoiceNumber}</span>
             </p>

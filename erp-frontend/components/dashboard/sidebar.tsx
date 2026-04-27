@@ -92,7 +92,7 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
             </Button>
           </div>
 
-          <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+          <nav className="flex-1 space-y-0.5 px-2 py-2 overflow-y-auto">
             {filteredNavigation.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
@@ -102,15 +102,25 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    "group relative flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-300",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-primary text-primary-foreground shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)] glow"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     collapsed && "justify-center px-2"
                   )}
                 >
-                  <item.Icon />
-                  {!collapsed && <span>{item.name}</span>}
+                  <div className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"
+                  )}>
+                    <item.Icon className="h-5 w-5" />
+                  </div>
+                  {!collapsed && (
+                    <span className="flex-1 truncate">{item.name}</span>
+                  )}
+                  {isActive && !collapsed && (
+                    <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-primary-foreground/50" />
+                  )}
                 </Link>
               );
 
@@ -129,7 +139,7 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
             })}
           </nav>
 
-          <div className="border-t border-border px-2 py-4 space-y-1">
+          <div className="border-t border-border px-2 py-2 space-y-0.5">
             {filteredSecondaryNavigation.map((item) => {
               const isActive = pathname === item.href;
 
@@ -138,18 +148,22 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    "group flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all duration-300",
                     isActive
                       ? "bg-muted text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     collapsed && "justify-center px-2"
                   )}
                 >
-                  <item.Icon />
-                  {!collapsed && <span>{item.name}</span>}
+                  <div className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110",
+                    isActive ? "text-foreground" : "text-muted-foreground group-hover:text-primary"
+                  )}>
+                    <item.Icon className="h-5 w-5" />
+                  </div>
+                  {!collapsed && <span className="flex-1 truncate">{item.name}</span>}
                 </Link>
               );
-
               if (collapsed) {
                 return (
                   <Tooltip key={item.name}>
@@ -169,7 +183,7 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleSignOut}
-                    className="flex w-full items-center justify-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl px-2 py-1.5 text-sm font-semibold text-muted-foreground transition-all duration-300 hover:bg-destructive/10 hover:text-destructive shadow-sm"
                   >
                     <LogOut className="h-5 w-5 flex-shrink-0" />
                   </button>
@@ -181,9 +195,11 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
             ) : (
               <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
+                className="group flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-all duration-300 hover:bg-destructive/10 hover:text-destructive"
               >
-                <LogOut className="h-5 w-5 flex-shrink-0" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110">
+                  <LogOut className="h-5 w-5 flex-shrink-0" />
+                </div>
                 <span>Sign out</span>
               </button>
             )}

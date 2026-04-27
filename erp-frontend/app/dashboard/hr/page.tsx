@@ -46,7 +46,7 @@ export default function HRPage() {
     <div className="space-y-8 font-geist animate-in fade-in duration-1000">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter italic">Talent & Payroll</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Talent & Payroll</h1>
           <p className="text-muted-foreground font-medium">Manage employee lifecycles and automated salary disbursements</p>
         </div>
         <div className="flex gap-3">
