@@ -43,6 +43,7 @@ interface LineItem {
 }
 
 import { clientsApi, invoicesApi } from "@/lib/api";
+import { toast } from "sonner";
 
 const currencies = [
   { code: "RWF", symbol: "FRw", name: "Rwandan Franc", rate: 1 },
@@ -107,9 +108,30 @@ export default function EditInvoicePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    router.push("/dashboard/invoices");
+    try {
+      const id = Array.isArray(params.id) ? params.id[0] : params.id;
+      if (!id) return;
+
+      // Prepare payload
+      const payload = {
+        ...formData,
+        amount: subtotal,
+        items: lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.rate,
+          totalPrice: item.quantity * item.rate
+        }))
+      };
+
+      await invoicesApi.update(id, payload);
+      toast.success("Invoice updated successfully");
+      router.push("/dashboard/invoices");
+    } catch (err) {
+      toast.error("Failed to update invoice");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const updateLineItem = (id: number, field: keyof LineItem, value: string | number) => {

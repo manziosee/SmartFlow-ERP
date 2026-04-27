@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +10,11 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Plus, Search, Filter, Phone, Mail, Building2, Star, CreditCard, ChevronRight, MoreHorizontal, UserCheck, ShieldCheck
+  Plus, Search, Filter, Phone, Mail, Building2, Star, CreditCard, ChevronRight, MoreHorizontal, UserCheck, ShieldCheck, Edit, Trash2
 } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 import { vendorsApi } from "@/lib/api";
 
@@ -186,11 +188,27 @@ export default function VendorsPage() {
                   </TableCell>
                   <TableCell className="text-right pr-8">
                     <div className="flex items-center justify-end gap-2">
-                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary">
-                          <ChevronRight className="h-5 w-5" />
+                       <Button variant="ghost" size="icon" asChild className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary">
+                          <Link href={`/dashboard/vendors/${vendor.id}/edit`}>
+                            <Edit className="h-5 w-5" />
+                          </Link>
                        </Button>
-                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl">
-                          <MoreHorizontal className="h-5 w-5" />
+                       <Button 
+                         variant="ghost" 
+                         size="icon" 
+                         className="h-10 w-10 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                         onClick={() => {
+                            if(confirm("Are you sure you want to delete this vendor?")) {
+                              vendorsApi.delete(vendor.id)
+                                .then(() => {
+                                   toast.success("Vendor deleted");
+                                   window.location.reload();
+                                })
+                                .catch(() => toast.error("Failed to delete vendor"));
+                            }
+                         }}
+                       >
+                          <Trash2 className="h-5 w-5" />
                        </Button>
                     </div>
                   </TableCell>

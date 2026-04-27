@@ -57,6 +57,15 @@ public class Invoice {
     @Builder.Default
     private java.util.List<InvoiceItem> items = new java.util.ArrayList<>();
 
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<com.smartflow.erp.payment.Payment> payments = new java.util.ArrayList<>();
+
+    @OneToOne(mappedBy = "invoice", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private com.smartflow.erp.recovery.RecoveryCase recoveryCase;
+
     // AI/Notification logic
     @Builder.Default
     private Integer reminderCount = 0;

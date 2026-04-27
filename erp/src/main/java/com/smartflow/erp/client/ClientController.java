@@ -64,6 +64,15 @@ public class ClientController {
             client.setCompany(clientDetails.getCompany());
             client.setAddress(clientDetails.getAddress());
             client.setIndustry(clientDetails.getIndustry());
+            
+            // Financials
+            if (clientDetails.getLifetimeRevenue() != null) client.setLifetimeRevenue(clientDetails.getLifetimeRevenue());
+            if (clientDetails.getTotalPaidAmount() != null) client.setTotalPaidAmount(clientDetails.getTotalPaidAmount());
+            if (clientDetails.getMonthlyRate() != null) client.setMonthlyRate(clientDetails.getMonthlyRate());
+            if (clientDetails.getPreferredBillingDay() != null) client.setPreferredBillingDay(clientDetails.getPreferredBillingDay());
+            if (clientDetails.getRiskIndex() != null) client.setRiskIndex(clientDetails.getRiskIndex());
+            if (clientDetails.getRiskScore() != null) client.setRiskScore(clientDetails.getRiskScore());
+
             return ResponseEntity.ok(clientRepository.save(client));
         }).orElse(ResponseEntity.notFound().build());
     }

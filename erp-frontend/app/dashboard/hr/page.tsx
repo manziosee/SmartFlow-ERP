@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Plus, Search, Users, Briefcase, Calendar, CreditCard, Wallet, Download, Clock, Zap, MapPin, MoreHorizontal
+  Plus, Search, Users, Briefcase, Calendar, CreditCard, Wallet, Download, Clock, Zap, MapPin, MoreHorizontal, Edit, Trash2
 } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { toast } from "sonner";
@@ -129,7 +130,8 @@ export default function HRPage() {
                     <TableHead className="pl-8 font-black uppercase text-[10px] tracking-widest">Employee</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Department</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Salary</TableHead>
-                    <TableHead className="text-right pr-8 font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                    <TableHead className="text-right pr-8 font-black uppercase text-[10px] tracking-widest">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -154,13 +156,39 @@ export default function HRPage() {
                       <TableCell>
                          <p className="font-black">{formatCurrency(emp.baseSalary || 0)}</p>
                       </TableCell>
-                      <TableCell className="text-right pr-8">
+                      <TableCell>
                         <Badge className={cn(
                           "rounded-lg font-black text-[9px] px-2 py-0.5",
                           (emp.status || "Active") === "Active" ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary"
                         )}>
                           {(emp.status || "Active").toUpperCase()}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right pr-8">
+                         <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary">
+                               <Link href={`/dashboard/hr/${emp.id}/edit`}>
+                                 <Edit className="h-4 w-4" />
+                               </Link>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => {
+                                 if(confirm(`Are you sure you want to remove ${emp.firstName}?`)) {
+                                   hrApi.deleteEmployee(emp.id)
+                                     .then(() => {
+                                        toast.success("Employee record removed");
+                                        window.location.reload();
+                                     })
+                                     .catch(() => toast.error("Failed to delete record"));
+                                 }
+                              }}
+                            >
+                               <Trash2 className="h-4 w-4" />
+                            </Button>
+                         </div>
                       </TableCell>
                     </TableRow>
                   ))}

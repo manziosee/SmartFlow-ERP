@@ -233,6 +233,8 @@ export const invoicesApi = {
     apiFetch<void>(`${API_URL}/invoices/${id}`, { method: "DELETE" }),
   cancel: (id: number) =>
     apiFetch<Invoice>(`${API_URL}/invoices/${id}/cancel`, { method: "POST" }),
+  update: (id: number | string, data: any) =>
+    apiFetch<Invoice>(`${API_URL}/invoices/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
 // ─── CLIENTS ──────────────────────────────────────────────────────────────
@@ -259,7 +261,9 @@ export const expensesApi = {
   getById: (id: number | string) => apiFetch<Expense>(`${API_URL}/expenses/${id}`),
   create: (data: Partial<Expense>) =>
     apiFetch<Expense>(`${API_URL}/expenses`, { method: "POST", body: JSON.stringify(data) }),
-  delete: (id: number) => apiFetch<void>(`${API_URL}/expenses/${id}`, { method: "DELETE" }),
+  delete: (id: number | string) => apiFetch<void>(`${API_URL}/expenses/${id}`, { method: "DELETE" }),
+  update: (id: number | string, data: any) =>
+    apiFetch<Expense>(`${API_URL}/expenses/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────
@@ -381,6 +385,12 @@ export const vendorsApi = {
 // ─── HR & PAYROLL ──────────────────────────────────────────────────────────
 export const hrApi = {
   getEmployees: () => apiFetch<Employee[]>(`${API_URL}/hr/employees`),
+  createEmployee: (data: any) =>
+    apiFetch<Employee>(`${API_URL}/hr/employees`, { method: "POST", body: JSON.stringify(data) }),
+  updateEmployee: (id: number, data: any) =>
+    apiFetch<Employee>(`${API_URL}/hr/employees/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteEmployee: (id: number) =>
+    apiFetch<void>(`${API_URL}/hr/employees/${id}`, { method: "DELETE" }),
   calculatePayroll: (gross: number) => 
     apiFetch<any>(`${RULES_URL}/payroll`, { method: "POST", body: JSON.stringify({ gross_salary: gross }) }),
 };
