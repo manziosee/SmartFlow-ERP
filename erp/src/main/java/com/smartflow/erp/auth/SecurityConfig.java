@@ -96,8 +96,14 @@ public class SecurityConfig {
         ));
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://*.vercel.app",
+                "https://*.fly.dev",
+                "https://*.netlify.app",
+                "https://*.railway.app",
+                "https://*.onrender.com",
                 "https://*-manziosee.vercel.app",
-                "https://*.vercel.app"
+                "https://manziosee-*-vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
