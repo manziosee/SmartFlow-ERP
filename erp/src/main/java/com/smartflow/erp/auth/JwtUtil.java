@@ -34,6 +34,10 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -53,6 +57,11 @@ public class JwtUtil {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        // Embed role in token so frontend can decode it without extra API calls
+        if (userDetails instanceof User user) {
+            claims.put("role", user.getRole().name());
+            claims.put("name", user.getFirstName() + " " + user.getLastName());
+        }
         return createToken(claims, userDetails.getUsername());
     }
 

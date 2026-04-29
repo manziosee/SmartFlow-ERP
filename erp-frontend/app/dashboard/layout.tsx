@@ -5,6 +5,7 @@ import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { cn } from "@/lib/utils";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { TokenExpiryWatcher } from "@/components/auth/token-expiry-watcher";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,7 @@ export default function DashboardLayout({
   return (
     <CurrencyProvider>
       <div className="min-h-screen bg-muted/30">
+        <TokenExpiryWatcher />
         <DashboardSidebar
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}

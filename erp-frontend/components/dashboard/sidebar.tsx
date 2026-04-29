@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Logo, NavIcons } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ChevronLeft, LogOut } from "lucide-react";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { notificationsApi } from "@/lib/api";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", Icon: NavIcons.Dashboard, roles: ["ADMIN", "MANAGER", "ACCOUNTANT", "RECOVERY_AGENT", "CLIENT"] },
@@ -46,6 +48,23 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    notificationsApi.getAll()
+      .then(data => {
+        const count = data.filter((n: any) => n.unread || !n.read).length;
+        setUnreadCount(count);
+      })
+      .catch(() => {});
+    // Refresh every 60 seconds
+    const interval = setInterval(() => {
+      notificationsApi.getAll()
+        .then(data => setUnreadCount(data.filter((n: any) => n.unread || !n.read).length))
+        .catch(() => {});
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleSignOut = () => {
     logout();
@@ -110,15 +129,25 @@ export function DashboardSidebar({ collapsed, onToggle }: SidebarProps) {
                   )}
                 >
                   <div className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110",
+                    "flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110 relative",
                     isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"
                   )}>
                     <item.Icon className="h-5 w-5" />
+                    {item.href === "/dashboard/notifications" && unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </div>
                   {!collapsed && (
                     <span className="flex-1 truncate">{item.name}</span>
                   )}
-                  {isActive && !collapsed && (
+                  {!collapsed && item.href === "/dashboard/notifications" && unreadCount > 0 && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  {isActive && !collapsed && item.href !== "/dashboard/notifications" && (
                     <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-primary-foreground/50" />
                   )}
                 </Link>
