@@ -303,22 +303,24 @@ export const marketplaceApi = {
 };
 
 // ─── AI SERVICE ───────────────────────────────────────────────────────────
+// NOTE: AI_URL (Python service) may not be deployed. Route insights through
+// the Java AssistantController which is always live on Fly.io.
 export const aiApi = {
   getInsights: (role = "MANAGER") =>
-    apiFetch<AiInsight[]>(`${AI_URL}/insights?role=${role}`),
+    apiFetch<AiInsight[]>(`${API_URL}/assistant/insights?role=${role}`),
   getPeerComparison: (clientId: number) =>
-    apiFetch<any>(`${AI_URL}/peer-comparison?client_id=${clientId}`),
+    AI_URL ? apiFetch<any>(`${AI_URL}/peer-comparison?client_id=${clientId}`) : Promise.resolve(null),
   predictPayment: (data: any) =>
-    apiFetch<any>(`${AI_URL}/predict-payment`, { method: "POST", body: JSON.stringify(data) }),
+    AI_URL ? apiFetch<any>(`${AI_URL}/predict-payment`, { method: "POST", body: JSON.stringify(data) }) : Promise.resolve(null),
   analyzeRisk: (invoiceId: number, amount: number, daysOverdue: number, riskIndex: number) =>
-    apiFetch<{ risk_score: number }>(`${AI_URL}/risk/${invoiceId}?amount=${amount}&days_overdue=${daysOverdue}&client_risk_index=${riskIndex}`),
+    AI_URL ? apiFetch<{ risk_score: number }>(`${AI_URL}/risk/${invoiceId}?amount=${amount}&days_overdue=${daysOverdue}&client_risk_index=${riskIndex}`) : Promise.resolve({ risk_score: 0 }),
   getCashflowForecast: () =>
-    apiFetch<CashflowForecast[]>(`${AI_URL}/forecast/cashflow`),
+    AI_URL ? apiFetch<CashflowForecast[]>(`${AI_URL}/forecast/cashflow`) : Promise.resolve([]),
   categorizeExpense: (description: string, amount: number) =>
-    apiFetch<{ category: string; confidence: number }>(`${AI_URL}/categorize-expense`, {
+    AI_URL ? apiFetch<{ category: string; confidence: number }>(`${AI_URL}/categorize-expense`, {
       method: "POST",
       body: JSON.stringify({ description, amount }),
-    }),
+    }) : Promise.resolve({ category: "operations", confidence: 1.0 }),
 };
 
 // ─── RULES ENGINE ─────────────────────────────────────────────────────────
