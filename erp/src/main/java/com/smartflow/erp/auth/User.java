@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -39,6 +40,17 @@ public class User implements UserDetails {
 
     private Long clientId;
 
+    // B6: Account lockout
+    @Builder.Default
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+
+    private LocalDateTime accountLockedUntil;
+
+    // B4/B5: Password reset
+    private String passwordResetToken;
+    private LocalDateTime passwordResetTokenExpiry;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -61,7 +73,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        if (accountLockedUntil == null) return true;
+        return LocalDateTime.now().isAfter(accountLockedUntil);
     }
 
     @Override

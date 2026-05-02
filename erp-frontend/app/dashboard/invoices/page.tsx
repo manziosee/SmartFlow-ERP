@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useState as useOptimistic } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +20,7 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeleton } from "@/components/ui/skeleton";
 import {
   Plus, Search, Filter, Download, MoreHorizontal, Eye, Edit,
   Send, Trash2, FileText, Clock, CheckCircle, AlertTriangle, Receipt, Loader2, RefreshCw, DollarSign
@@ -33,6 +32,11 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { invoicesApi, clientsApi, type Invoice, type Client } from "@/lib/api";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
   DRAFT:     { label: "Draft",     icon: FileText,      className: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/30 dark:text-gray-400" },
@@ -60,12 +64,46 @@ export default function InvoicesPage() {
   const [genSearchQuery, setGenSearchQuery] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchInvoices = () => {
+  const fetchInvoices = useCallback(() => {
     setLoading(true);
     invoicesApi.getAll()
       .then(setInvoices)
       .catch(() => toast.error("Failed to load invoices"))
       .finally(() => setLoading(false));
+  }, []);
+
+  const handleExportPDF = (invoice: Invoice) => {
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Invoice ${invoice.invoiceNumber}</title>
+      <style>
+        body { font-family: sans-serif; padding: 40px; color: #111; }
+        h1 { font-size: 28px; margin-bottom: 4px; }
+        .sub { color: #666; margin-bottom: 32px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th { background: #f3f4f6; text-align: left; padding: 10px 12px; font-size: 13px; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
+        .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600;
+          background:${invoice.status === 'PAID' ? '#d1fae5' : invoice.status === 'OVERDUE' ? '#fee2e2' : '#fef3c7'};
+          color:${invoice.status === 'PAID' ? '#065f46' : invoice.status === 'OVERDUE' ? '#991b1b' : '#92400e'}; }
+      </style></head><body>
+      <h1>INVOICE</h1>
+      <div class="sub">${invoice.invoiceNumber} &nbsp;·&nbsp; <span class="badge">${invoice.status}</span></div>
+      <table><thead><tr><th>Client</th><th>Issue Date</th><th>Due Date</th><th>Amount</th><th>Tax (18%)</th><th>Total</th></tr></thead>
+      <tbody><tr>
+        <td>${invoice.client?.name ?? "—"}</td>
+        <td>${invoice.issueDate ?? "—"}</td>
+        <td>${invoice.dueDate ?? "—"}</td>
+        <td>${invoice.amount?.toLocaleString()} RWF</td>
+        <td>${invoice.taxAmount?.toLocaleString() ?? 0} RWF</td>
+        <td><strong>${((invoice.amount ?? 0) + (invoice.taxAmount ?? 0)).toLocaleString()} RWF</strong></td>
+      </tr></tbody></table>
+      <div class="total">Total Due: ${((invoice.amount ?? 0) + (invoice.taxAmount ?? 0)).toLocaleString()} RWF</div>
+      <script>window.onload=()=>{window.print();window.close();}<\/script>
+      </body></html>`);
+    win.document.close();
   };
 
   const handleDeleteInvoice = async () => {
@@ -148,11 +186,18 @@ export default function InvoicesPage() {
     const clientName = inv.client?.name ?? "";
     const matchesSearch =
       clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inv.invoiceNumber ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(inv.id).includes(searchQuery);
     const matchesStatus =
       statusFilter === "all" || (inv.status ?? "").toUpperCase() === statusFilter.toUpperCase();
     return matchesSearch && matchesStatus;
   });
+
+  const { sort, toggleSort, page, setPage, pageSize, setPageSize, paginated: pagedInvoices, total: filteredTotal } =
+    useTable(filteredInvoices, {
+      defaultSort: { column: "id", direction: "desc" },
+      pageSize: 20,
+    });
 
   const stats = {
     total: invoices.reduce((a, i) => a + i.amount, 0),
@@ -161,8 +206,11 @@ export default function InvoicesPage() {
     overdue: invoices.filter(i => i.status?.toUpperCase() === "OVERDUE").reduce((a, i) => a + i.amount, 0),
   };
 
+  if (loading) return <PageSkeleton cards={4} rows={8} cols={6} />;
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Invoice Ledger</h1>
@@ -338,29 +386,33 @@ export default function InvoicesPage() {
             </div>
           </div>
 
+          {filteredTotal === 0 ? (
+            <Empty className="py-16">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><FileText className="h-6 w-6" /></EmptyMedia>
+                <EmptyTitle>{searchQuery || statusFilter !== "all" ? "No matching invoices" : "No invoices yet"}</EmptyTitle>
+                <EmptyDescription>
+                  {searchQuery || statusFilter !== "all"
+                    ? "Try adjusting your search or filter criteria."
+                    : "Create your first invoice to get started."}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
           <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invoice</TableHead><TableHead>Client</TableHead>
-                  <TableHead>Amount</TableHead><TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead><TableHead className="text-right">Actions</TableHead>
+                  <TableHead><SortableHeader column="invoiceNumber" label="Invoice" sort={sort} onSort={toggleSort} /></TableHead>
+                  <TableHead><SortableHeader column="client.name" label="Client" sort={sort} onSort={toggleSort} /></TableHead>
+                  <TableHead><SortableHeader column="amount" label="Amount" sort={sort} onSort={toggleSort} /></TableHead>
+                  <TableHead><SortableHeader column="status" label="Status" sort={sort} onSort={toggleSort} /></TableHead>
+                  <TableHead><SortableHeader column="dueDate" label="Due Date" sort={sort} onSort={toggleSort} /></TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>{Array.from({ length: 6 }).map((_, j) => (
-                      <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
-                    ))}</TableRow>
-                  ))
-                ) : filteredInvoices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                      {searchQuery || statusFilter !== "all" ? "No invoices match your filters." : "No invoices yet. Create your first one!"}
-                    </TableCell>
-                  </TableRow>
-                ) : filteredInvoices.map((invoice) => {
+                {pagedInvoices.map((invoice) => {
                   const statusKey = (invoice.status ?? "DRAFT").toUpperCase();
                   const status = statusConfig[statusKey] ?? statusConfig.DRAFT;
                   const StatusIcon = status.icon;
@@ -424,7 +476,15 @@ export default function InvoicesPage() {
                 })}
               </TableBody>
             </Table>
+            <DataTablePagination
+              total={filteredTotal}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+            />
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -549,7 +609,7 @@ export default function InvoicesPage() {
                 {user?.role === "CLIENT" && selectedInvoice.status?.toUpperCase() !== "PAID" && (
                   <Button className="flex-1 font-bold h-14 rounded-2xl text-lg shadow-lg glow">Pay Now</Button>
                 )}
-                <Button variant="outline" className="flex-1 font-bold h-14 rounded-2xl gap-2 border-2" onClick={() => window.print()}>
+                <Button variant="outline" className="flex-1 font-bold h-14 rounded-2xl gap-2 border-2" onClick={() => handleExportPDF(selectedInvoice)}>
                   <Download className="h-5 w-5" /> Download PDF
                 </Button>
                 {user?.role !== "CLIENT" && (

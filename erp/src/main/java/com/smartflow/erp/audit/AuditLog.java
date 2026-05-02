@@ -1,6 +1,5 @@
 package com.smartflow.erp.audit;
 
-import com.smartflow.erp.auth.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +8,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * B7: Audit log entity — records sensitive create/delete actions across the system.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,17 +24,20 @@ public class AuditLog {
     private Long id;
 
     @Column(nullable = false)
-    private String action;
+    private String action;       // e.g. "CREATE_INVOICE", "DELETE_CLIENT"
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User performedBy;
+    @Column(nullable = false)
+    private String entityType;   // e.g. "Invoice", "Client"
 
-    @Builder.Default
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private Long entityId;
+
+    @Column(nullable = false)
+    private String performedBy;  // user email
 
     @Column(columnDefinition = "TEXT")
     private String details;
 
-    private String entityId;
+    @Builder.Default
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime timestamp = LocalDateTime.now();
 }

@@ -211,17 +211,45 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ ...data, role: "CLIENT" }),
     }),
+
+  forgotPassword: (email: string) =>
+    apiFetch<void>(`${API_URL}/auth/forgot-password`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiFetch<void>(`${API_URL}/auth/reset-password`, {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiFetch<void>(`${API_URL}/auth/change-password`, {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };
 
 // ─── ANALYTICS ────────────────────────────────────────────────────────────
 export const analyticsApi = {
-  getSummary: () => apiFetch<AnalyticsSummary>(`${API_URL}/analytics/summary`),
+  getSummary: (period?: string) => apiFetch<AnalyticsSummary>(`${API_URL}/analytics/summary${period ? `?period=${period}` : ''}`),
   getCashflow: () => apiFetch<CashflowEntry[]>(`${API_URL}/analytics/cashflow`),
 };
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────
 export const invoicesApi = {
-  getAll: (period?: string) => apiFetch<Invoice[]>(`${API_URL}/invoices${period ? `?period=${period}` : ''}`),
+  getAll: (params?: string | { period?: string; status?: string; q?: string }) => {
+    if (!params || typeof params === 'string') {
+      return apiFetch<Invoice[]>(`${API_URL}/invoices${params ? `?period=${params}` : ''}`);
+    }
+    const q = new URLSearchParams();
+    if (params.period) q.set('period', params.period);
+    if (params.status) q.set('status', params.status);
+    if (params.q) q.set('q', params.q);
+    const qs = q.toString();
+    return apiFetch<Invoice[]>(`${API_URL}/invoices${qs ? `?${qs}` : ''}`);
+  },
   getById: (id: number | string) => apiFetch<any>(`${API_URL}/invoices/${id}`),
   create: (data: Partial<Invoice>) =>
     apiFetch<Invoice>(`${API_URL}/invoices`, { method: "POST", body: JSON.stringify(data) }),

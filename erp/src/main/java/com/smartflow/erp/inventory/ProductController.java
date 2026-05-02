@@ -1,5 +1,9 @@
 package com.smartflow.erp.inventory;
 
+import com.smartflow.erp.auth.User;
+import com.smartflow.erp.auth.UserRepository;
+import com.smartflow.erp.notification.Notification;
+import com.smartflow.erp.notification.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +17,8 @@ public class ProductController {
 
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
@@ -41,10 +47,12 @@ public class ProductController {
         return ResponseEntity.ok(productRepository.save(product));
     }
 
+    // B21: Check stock level after any stock update
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
         return productRepository.findById(id)
                 .map(product -> {
+                    int previousQty = product.getStockQuantity();
                     product.setName(productDetails.getName());
                     product.setDescription(productDetails.getDescription());
                     product.setSku(productDetails.getSku());
@@ -54,7 +62,16 @@ public class ProductController {
                     product.setMinStockLevel(productDetails.getMinStockLevel());
                     product.setLocation(productDetails.getLocation());
                     product.setCategory(productDetails.getCategory());
-                    return ResponseEntity.ok(productRepository.save(product));
+                    Product saved = productRepository.save(product);
+
+                    // B21: Alert when stock falls to or below min level
+                    int newQty = saved.getStockQuantity();
+                    int minLevel = saved.getMinStockLevel() != null ? saved.getMinStockLevel() : 5;
+                    if (newQty <= minLevel && newQty < previousQty) {
+                        sendStockLowNotification(saved, newQty);
+                    }
+
+                    return ResponseEntity.ok(saved);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -63,5 +80,23 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productRepository.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ---------------------------------------------------------------- B21 helper
+    private void sendStockLowNotification(Product product, int currentQty) {
+        List<User> adminManagers = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == User.Role.ADMIN || u.getRole() == User.Role.MANAGER)
+                .toList();
+
+        for (User recipient : adminManagers) {
+            Notification notification = Notification.builder()
+                    .title("Low Stock Alert: " + product.getName())
+                    .message("Product '" + product.getName() + "' (SKU: " + product.getSku()
+                            + ") has fallen to " + currentQty + " units, at or below the minimum stock level of "
+                            + product.getMinStockLevel() + ".")
+                    .recipient(recipient)
+                    .build();
+            notificationRepository.save(notification);
+        }
     }
 }

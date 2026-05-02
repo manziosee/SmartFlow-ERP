@@ -4,10 +4,12 @@ import { StatsCards } from "../stats-cards";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AlertCircle, Clock, CheckCircle2 } from "lucide-react";
 import { RecentInvoices } from "../recent-invoices";
+import { OverdueBanner } from "../overdue-banner";
 
 export function RecoveryDashboard() {
   return (
     <div className="space-y-6">
+      <OverdueBanner />
       <StatsCards role="RECOVERY_AGENT" />
       
       <div className="grid gap-6 md:grid-cols-2">

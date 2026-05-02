@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 }
 
 import { Outfit } from 'next/font/google';
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const outfit = Outfit({ 
@@ -42,10 +43,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} bg-background`} suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <AuthProvider>
-          {children}
-          {process.env.NODE_ENV === 'production' && <Analytics />}
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            {children}
+            {process.env.NODE_ENV === 'production' && <Analytics />}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

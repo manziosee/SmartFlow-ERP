@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PageSkeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +66,6 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle,
-  MapPin,
   Receipt,
   History
 } from "lucide-react";
@@ -85,6 +85,12 @@ import { toast } from "sonner";
 
 import { expensesApi } from "@/lib/api";
 import { useEffect } from "react";
+
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 
 const categoryConfig = {
@@ -152,6 +158,9 @@ export default function ExpensesPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const { sort, toggleSort, page, setPage, pageSize, setPageSize, paginated: pagedExpenses, total: filteredTotal } =
+    useTable(filteredExpenses, { pageSize: 20 });
+
   const stats = {
     total: expenses.reduce((acc, e) => acc + e.amount, 0),
     approved: expenses
@@ -183,8 +192,11 @@ export default function ExpensesPage() {
     }
   };
 
+  if (isLoading) return <PageSkeleton cards={3} rows={8} cols={6} />;
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       {/* Page Header */}
       <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
@@ -276,7 +288,7 @@ export default function ExpensesPage() {
             <div className="text-2xl font-semibold tracking-tight">
               {formatCurrency(stats.total)}
             </div>
-            
+
           </CardContent>
         </Card>
 
@@ -289,7 +301,7 @@ export default function ExpensesPage() {
             <div className="text-2xl font-bold">
               {formatCurrency(stats.approved)}
             </div>
-            
+
           </CardContent>
         </Card>
 
@@ -302,7 +314,7 @@ export default function ExpensesPage() {
             <div className="text-2xl font-bold">
               {formatCurrency(stats.pending)}
             </div>
-            
+
           </CardContent>
         </Card>
 
@@ -313,7 +325,7 @@ export default function ExpensesPage() {
           </CardHeader>
           <CardContent className="px-6 pb-6">
             <div className="text-2xl font-semibold tracking-tight">{stats.thisMonth} <span className="text-sm font-bold uppercase">Entries</span></div>
-            
+
           </CardContent>
         </Card>
       </div>
@@ -361,17 +373,43 @@ export default function ExpensesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Expense</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>
+                    <SortableHeader column="description" label="Expense" sort={sort} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader column="category" label="Category" sort={sort} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader column="vendor" label="Vendor" sort={sort} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader column="amount" label="Amount" sort={sort} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader column="date" label="Date" sort={sort} onSort={toggleSort} />
+                  </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredExpenses.map((expense) => {
+                {filteredTotal === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <Receipt />
+                          </EmptyMedia>
+                          <EmptyTitle>No expenses found</EmptyTitle>
+                          <EmptyDescription>
+                            No expenses match your current search or filter. Try adjusting your criteria.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    </TableCell>
+                  </TableRow>
+                ) : pagedExpenses.map((expense) => {
                   const category = categoryConfig[expense.category as keyof typeof categoryConfig] || { label: expense.category, icon: Package, color: "bg-gray-100 text-gray-700" };
                   const CategoryIcon = category.icon;
                   return (
@@ -430,7 +468,7 @@ export default function ExpensesPage() {
                               View Receipt
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-destructive font-bold"
                               onClick={() => setExpenseToDelete(expense.id)}
                             >
@@ -446,6 +484,13 @@ export default function ExpensesPage() {
               </TableBody>
             </Table>
           </div>
+          <DataTablePagination
+            total={filteredTotal}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+          />
         </CardContent>
       </Card>
       {/* Detailed View Modal: Center Pop-out */}
@@ -466,7 +511,7 @@ export default function ExpensesPage() {
               </div>
             </div>
           </DialogHeader>
-          
+
           {selectedExpense && (
             <div className="p-8 space-y-12 max-h-[70vh] overflow-y-auto font-geist">
               {/* Core Details */}
@@ -575,7 +620,7 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete expense record 
+              This action cannot be undone. This will permanently delete expense record
               <span className="font-bold text-foreground mx-1">{expenseToDelete}</span>
               and remove it from your balance sheet.
             </AlertDialogDescription>

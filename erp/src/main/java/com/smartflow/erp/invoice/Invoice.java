@@ -2,6 +2,7 @@ package com.smartflow.erp.invoice;
 
 import com.smartflow.erp.client.Client;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,11 +27,13 @@ public class Invoice {
     @Column(unique = true, nullable = false)
     private String invoiceNumber;
 
+    @NotNull(message = "Client is required")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Client client;
 
+    @NotNull(message = "Amount is required")
     @Column(nullable = false)
     private BigDecimal amount;
 

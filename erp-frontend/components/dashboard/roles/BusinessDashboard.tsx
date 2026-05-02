@@ -8,6 +8,7 @@ import { CashflowChart } from "../cashflow-chart";
 
 import { Button } from "@/components/ui/button";
 import { UserPlus, Users, BarChart3, Settings } from "lucide-react";
+import { OverdueBanner } from "../overdue-banner";
 
 export function BusinessDashboard() {
   return (
@@ -16,7 +17,9 @@ export function BusinessDashboard() {
         <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
         <p className="text-sm text-muted-foreground">System overview and management controls</p>
       </div>
-      
+
+      <OverdueBanner />
+
       <StatsCards role="ADMIN" />
       
       <div className="flex items-center gap-3">
