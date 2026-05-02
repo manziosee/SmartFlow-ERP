@@ -10,7 +10,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Plus, Search, Filter, Phone, Mail, Building2, Star, CreditCard, ChevronRight, MoreHorizontal, UserCheck, ShieldCheck, Edit, Trash2, TrendingUp, TrendingDown
+  Plus, Search, Filter, Mail, Star, CreditCard, ShieldCheck, Edit, Trash2, TrendingUp, TrendingDown
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,6 +25,12 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { vendorsApi } from "@/lib/api";
+import { PageSkeleton } from "@/components/ui/skeleton";
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 export default function VendorsPage() {
   const { formatCurrency } = useCurrency();
@@ -40,14 +46,20 @@ export default function VendorsPage() {
   }, []);
 
   const filteredVendors = vendors.filter(v => {
-    const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (v.contactPerson && v.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = categoryFilter === "all" || v.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
+  const { sort, toggleSort, page, setPage, pageSize, setPageSize, paginated: pagedVendors, total: filteredTotal } =
+    useTable(filteredVendors, { pageSize: 20 });
+
+  if (loading) return <PageSkeleton cards={3} rows={8} cols={5} />;
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Vendor Network</h1>
@@ -151,17 +163,39 @@ export default function VendorsPage() {
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent border-border/50">
-                <TableHead className="pl-8 font-bold uppercase text-[10px] tracking-widest">Supplier Entity</TableHead>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest">Performance</TableHead>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest">Total Spend</TableHead>
-                <TableHead className="font-bold uppercase text-[10px] tracking-widest">Status</TableHead>
+                <TableHead className="pl-8 font-bold uppercase text-[10px] tracking-widest">
+                  <SortableHeader column="name" label="Supplier Entity" sort={sort} onSort={toggleSort} />
+                </TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                  <SortableHeader column="category" label="Performance" sort={sort} onSort={toggleSort} />
+                </TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                  <SortableHeader column="totalPurchasedAmount" label="Total Spend" sort={sort} onSort={toggleSort} />
+                </TableHead>
+                <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                  <SortableHeader column="status" label="Status" sort={sort} onSort={toggleSort} />
+                </TableHead>
                 <TableHead className="text-right pr-8 font-bold uppercase text-[10px] tracking-widest">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                <TableRow><TableCell colSpan={5} className="h-40 text-center text-muted-foreground font-bold animate-pulse">Scanning Global Supply Chain...</TableCell></TableRow>
-              ) : filteredVendors.map((vendor) => (
+              {filteredTotal === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5}>
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <ShieldCheck />
+                        </EmptyMedia>
+                        <EmptyTitle>No vendors found</EmptyTitle>
+                        <EmptyDescription>
+                          No vendors match your current search or filter. Try adjusting your criteria.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              ) : pagedVendors.map((vendor) => (
                 <TableRow key={vendor.id} className="group border-border/30 hover:bg-muted/30 transition-colors">
                   <TableCell className="pl-8 py-5">
                     <div className="flex items-center gap-4">
@@ -184,9 +218,9 @@ export default function VendorsPage() {
                           <span className="text-[10px] font-bold text-primary">{vendor.reliabilityScore || 0}%</span>
                        </div>
                        <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={cn("h-full", (vendor.reliabilityScore || 0) > 90 ? "bg-emerald-500" : (vendor.reliabilityScore || 0) > 80 ? "bg-primary" : "bg-orange-500")} 
-                            style={{ width: `${vendor.reliabilityScore || 0}%` }} 
+                          <div
+                            className={cn("h-full", (vendor.reliabilityScore || 0) > 90 ? "bg-emerald-500" : (vendor.reliabilityScore || 0) > 80 ? "bg-primary" : "bg-orange-500")}
+                            style={{ width: `${vendor.reliabilityScore || 0}%` }}
                           />
                        </div>
                     </div>
@@ -212,9 +246,9 @@ export default function VendorsPage() {
                             <Edit className="h-5 w-5" />
                           </Link>
                        </Button>
-                       <Button 
-                         variant="ghost" 
-                         size="icon" 
+                       <Button
+                         variant="ghost"
+                         size="icon"
                          className="h-10 w-10 rounded-xl hover:bg-destructive/10 hover:text-destructive"
                          onClick={() => {
                             if(confirm("Are you sure you want to delete this vendor?")) {
@@ -235,6 +269,13 @@ export default function VendorsPage() {
               ))}
             </TableBody>
           </Table>
+          <DataTablePagination
+            total={filteredTotal}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+          />
         </CardContent>
       </Card>
     </div>

@@ -19,7 +19,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, PageSkeleton } from "@/components/ui/skeleton";
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { useFormValidation, required, email as emailRule } from "@/hooks/use-form-validation";
 import {
   Plus, Search, MoreHorizontal, Mail, Phone, MapPin, Building,
   FileText, DollarSign, Edit, Trash2, Eye, Users, TrendingUp,
@@ -47,6 +52,10 @@ export default function ClientsPage() {
   const [clientToDelete, setClientToDelete] = useState<number | null>(null);
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", address: "" });
+  const { errors: clientErrors, validate: validateClient, clearError: clearClientError } = useFormValidation({
+    name: [required("Client name is required")],
+    email: [required("Email is required"), emailRule()],
+  });
 
   const fetchClients = () => {
     setLoading(true);
@@ -59,10 +68,7 @@ export default function ClientsPage() {
   useEffect(() => { fetchClients(); }, []);
 
   const handleAddClient = async () => {
-    if (!newClient.name || !newClient.email) {
-      toast.error("Name and email are required.");
-      return;
-    }
+    if (!validateClient(newClient)) return;
     setIsSubmitting(true);
     try {
       await clientsApi.create(newClient);
@@ -96,6 +102,9 @@ export default function ClientsPage() {
     (c.company ?? "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const { page, setPage, pageSize, setPageSize, paginated: pagedClients, total: filteredTotal } =
+    useTable(filteredClients, { pageSize: 12 });
+
   const stats = {
     total: clients.length,
     active: clients.length, // All fetched clients are considered active
@@ -103,8 +112,11 @@ export default function ClientsPage() {
     outstanding: 0,
   };
 
+  if (loading) return <PageSkeleton cards={4} rows={8} cols={5} />;
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -124,7 +136,9 @@ export default function ClientsPage() {
               <div className="grid gap-2">
                 <Label htmlFor="name">Client Name *</Label>
                 <Input id="name" placeholder="John Doe" value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
+                  className={clientErrors.name ? "border-destructive" : ""}
+                  onChange={(e) => { setNewClient({ ...newClient, name: e.target.value }); clearClientError("name"); }} />
+                {clientErrors.name && <p className="text-xs text-destructive">{clientErrors.name}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="company">Company</Label>
@@ -135,7 +149,9 @@ export default function ClientsPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input id="email" type="email" placeholder="client@company.com" value={newClient.email}
-                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
+                    className={clientErrors.email ? "border-destructive" : ""}
+                    onChange={(e) => { setNewClient({ ...newClient, email: e.target.value }); clearClientError("email"); }} />
+                  {clientErrors.email && <p className="text-xs text-destructive">{clientErrors.email}</p>}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="phone">Phone</Label>
@@ -208,20 +224,20 @@ export default function ClientsPage() {
       </div>
 
       {/* Client Grid */}
-      {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}><CardHeader><Skeleton className="h-12 w-12 rounded-full" /></CardHeader>
-              <CardContent><Skeleton className="h-4 w-full mb-2" /><Skeleton className="h-4 w-3/4" /></CardContent></Card>
-          ))}
-        </div>
-      ) : filteredClients.length === 0 ? (
-        <div className="py-20 text-center text-muted-foreground">
-          {searchQuery ? "No clients match your search." : "No clients yet. Add your first client!"}
-        </div>
+      {filteredTotal === 0 ? (
+        <Empty className="py-16">
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><Users className="h-6 w-6" /></EmptyMedia>
+            <EmptyTitle>{searchQuery ? "No matching clients" : "No clients yet"}</EmptyTitle>
+            <EmptyDescription>
+              {searchQuery ? "Try a different search term." : "Add your first client to get started."}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
+        <>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredClients.map((client) => {
+          {pagedClients.map((client) => {
             const initials = (client.name ?? "??").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
             return (
               <Card key={client.id} className="hover:shadow-md transition-shadow">
@@ -293,6 +309,14 @@ export default function ClientsPage() {
             );
           })}
         </div>
+        <DataTablePagination
+          total={filteredTotal}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        />
+        </>
       )}
 
       {/* Detail Modal */}

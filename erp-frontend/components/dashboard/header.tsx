@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Search, Plus } from "lucide-react";
+import { Bell, Search, Plus, Sun, Moon, Menu } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,13 +20,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { notificationsApi } from "@/lib/api";
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
+  onMobileMenuToggle: () => void;
 }
-
-import { useState, useEffect } from "react";
-import { notificationsApi } from "@/lib/api";
 
 const typeColors = {
   payment: "bg-emerald-500",
@@ -36,7 +37,8 @@ const typeColors = {
   invoice: "bg-blue-500",
 };
 
-export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
+export function DashboardHeader({ sidebarCollapsed, onMobileMenuToggle }: HeaderProps) {
+  const { resolvedTheme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
@@ -50,10 +52,22 @@ export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
       <header
         className={cn(
           "fixed top-0 right-0 z-30 h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300",
-          sidebarCollapsed ? "left-[68px]" : "left-64"
+          "left-0 lg:left-64",
+          sidebarCollapsed && "lg:left-[68px]"
         )}
       >
-        <div className="flex h-full items-center justify-between px-6">
+        <div className="flex h-full items-center gap-3 px-4 sm:px-6">
+          {/* Hamburger — mobile only */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden flex-shrink-0"
+            onClick={onMobileMenuToggle}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
           {/* Search */}
           <div className="flex-1 max-w-md">
             <div className="relative">
@@ -67,7 +81,23 @@ export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                  aria-label="Toggle dark mode"
+                >
+                  {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+              </TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button className="gap-2 shadow-sm" asChild>
@@ -77,9 +107,7 @@ export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
                   </Link>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Create a new invoice
-              </TooltipContent>
+              <TooltipContent side="bottom">Create a new invoice</TooltipContent>
             </Tooltip>
 
             {/* Notifications */}
@@ -97,11 +125,9 @@ export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  Notifications
-                </TooltipContent>
+                <TooltipContent side="bottom">Notifications</TooltipContent>
               </Tooltip>
-              <DropdownMenuContent align="end" className="w-96">
+              <DropdownMenuContent align="end" className="w-80 sm:w-96">
                 <DropdownMenuLabel className="flex items-center justify-between py-3">
                   <span className="text-base font-semibold">Notifications</span>
                   {unreadCount > 0 && (
@@ -112,7 +138,9 @@ export function DashboardHeader({ sidebarCollapsed }: HeaderProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="max-h-80 overflow-y-auto">
-                  {notifications.map((notification) => (
+                  {notifications.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">No notifications</div>
+                  ) : notifications.map((notification) => (
                     <DropdownMenuItem
                       key={notification.id}
                       className="flex items-start gap-3 p-4 cursor-pointer focus:bg-muted/50"

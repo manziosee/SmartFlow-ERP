@@ -1,25 +1,33 @@
 package com.smartflow.erp.audit;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * B7: Exposes audit log entries — accessible by ADMIN only.
+ */
 @RestController
 @RequestMapping("/api/v1/audit")
 @RequiredArgsConstructor
-@Tag(name = "Audit Logs", description = "System-wide audit trail and activity monitoring.")
 public class AuditController {
 
-    private final AuditRepository auditRepository;
+    private final AuditLogRepository auditLogRepository;
 
     @GetMapping
-    @Operation(summary = "Get all audit logs")
-    public List<AuditLog> getAuditLogs() {
-        return auditRepository.findAll();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<AuditLog>> getAuditLogs() {
+        return ResponseEntity.ok(auditLogRepository.findAllByOrderByTimestampDesc());
+    }
+
+    @GetMapping("/entity/{type}/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<AuditLog>> getByEntity(@PathVariable String type,
+                                                       @PathVariable Long id) {
+        return ResponseEntity.ok(
+                auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(type, id));
     }
 }

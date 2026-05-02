@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Receipt, CreditCard, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { analyticsApi, expensesApi } from "@/lib/api";
+import { OverdueBanner } from "../overdue-banner";
 
 export function AccountantDashboard() {
   const [stats, setStats] = useState({
@@ -35,6 +36,7 @@ export function AccountantDashboard() {
 
   return (
     <div className="space-y-6">
+      <OverdueBanner />
       <StatsCards role="ACCOUNTANT" />
       
       <div className="grid gap-6 md:grid-cols-3">

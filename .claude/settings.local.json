@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -A 30 \"@PostMapping$\\\\|createInvoice\\\\|invoiceNumber\\\\|INV\")"
+    ]
+  }
+}

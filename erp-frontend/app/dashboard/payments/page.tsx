@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PageSkeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,12 @@ import { cn } from "@/lib/utils";
 import { paymentsApi } from "@/lib/api";
 import { useEffect } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
+
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 
 const statusConfig = {
@@ -103,6 +110,9 @@ export default function PaymentsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const { sort, toggleSort, page, setPage, pageSize, setPageSize, paginated: pagedPayments, total: filteredTotal } =
+    useTable(filteredPayments, { pageSize: 20 });
+
   const stats = {
     total: payments.reduce((acc, p) => acc + p.amount, 0),
     completed: payments
@@ -114,8 +124,11 @@ export default function PaymentsPage() {
     thisMonth: payments.length,
   };
 
+  if (isLoading) return <PageSkeleton cards={3} rows={8} cols={5} />;
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       {/* Page Header */}
       <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
@@ -217,17 +230,43 @@ export default function PaymentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Payment ID</TableHead>
+                  <TableHead>
+                    <SortableHeader column="id" label="Payment ID" sort={sort} onSort={toggleSort} />
+                  </TableHead>
                   <TableHead>Invoice</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>
+                    <SortableHeader column="client" label="Client" sort={sort} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader column="amount" label="Amount" sort={sort} onSort={toggleSort} />
+                  </TableHead>
                   <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>
+                    <SortableHeader column="status" label="Status" sort={sort} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortableHeader column="paymentDate" label="Date" sort={sort} onSort={toggleSort} />
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayments.map((payment) => {
+                {filteredTotal === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <DollarSign />
+                          </EmptyMedia>
+                          <EmptyTitle>No payments found</EmptyTitle>
+                          <EmptyDescription>
+                            No payments match your current search or filter. Try adjusting your criteria.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    </TableCell>
+                  </TableRow>
+                ) : pagedPayments.map((payment) => {
                   const statusKey = (payment.status || 'pending').toLowerCase();
                   const status = statusConfig[statusKey as keyof typeof statusConfig] || statusConfig.pending;
                   const methodKey = (payment.method || 'bank_transfer').toLowerCase();
@@ -270,6 +309,13 @@ export default function PaymentsPage() {
               </TableBody>
             </Table>
           </div>
+          <DataTablePagination
+            total={filteredTotal}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+          />
         </CardContent>
       </Card>
     </div>

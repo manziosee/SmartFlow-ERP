@@ -1,6 +1,8 @@
 package com.smartflow.erp.vendor;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,9 +23,11 @@ public class Vendor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Vendor name is required")
     @Column(nullable = false)
     private String name;
 
+    @Email(message = "Must be a valid email address")
     private String email;
     private String phone;
     private String contactPerson;

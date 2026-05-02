@@ -10,13 +10,19 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Plus, Search, Filter, Download, Package, AlertOctagon, TrendingUp, TrendingDown, Warehouse, Loader2, Sparkles, History, Edit, Trash2
+  Plus, Search, Package, AlertOctagon, TrendingUp, TrendingDown, Warehouse, Loader2, Sparkles, History, Edit, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 import { inventoryApi, expensesApi } from "@/lib/api";
+import { PageSkeleton } from "@/components/ui/skeleton";
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 export default function InventoryPage() {
   const { formatCurrency } = useCurrency();
@@ -58,10 +64,9 @@ export default function InventoryPage() {
       const total = qty * unitPrice;
       const poNumber = `PO-${Date.now().toString().slice(-6)}`;
       await expensesApi.create({
-        description: `Purchase Order ${poNumber} — ${qty} × ${selectedProduct.name}`,
+        description: `Purchase Order ${poNumber} — ${qty} × ${selectedProduct.name} (${selectedProduct.supplier || "Supplier"})`,
         amount: total,
         category: "operations",
-        vendor: selectedProduct.supplier || "Supplier",
         status: "pending",
         date: new Date().toISOString().split("T")[0],
       });
@@ -73,15 +78,21 @@ export default function InventoryPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.sku.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const { sort, toggleSort, page, setPage, pageSize, setPageSize, paginated: pagedProducts, total: filteredTotal } =
+    useTable(filteredProducts, { pageSize: 20 });
+
   const lowStockCount = products.filter(p => p.stockQuantity <= p.minStockLevel).length;
+
+  if (loading) return <PageSkeleton cards={4} rows={8} cols={6} />;
 
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Stock Intelligence</h1>
@@ -191,19 +202,41 @@ export default function InventoryPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent border-border/50">
-                    <TableHead className="w-[100px] pl-8 font-bold uppercase text-[10px] tracking-widest">SKU</TableHead>
-                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">Product</TableHead>
-                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">Status</TableHead>
-                    <TableHead className="text-center font-bold uppercase text-[10px] tracking-widest">Stock Level</TableHead>
+                    <TableHead className="w-[100px] pl-8 font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="sku" label="SKU" sort={sort} onSort={toggleSort} />
+                    </TableHead>
+                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="name" label="Product" sort={sort} onSort={toggleSort} />
+                    </TableHead>
+                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="stockQuantity" label="Status" sort={sort} onSort={toggleSort} />
+                    </TableHead>
+                    <TableHead className="text-center font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="minStockLevel" label="Stock Level" sort={sort} onSort={toggleSort} />
+                    </TableHead>
                     <TableHead className="text-right font-bold uppercase text-[10px] tracking-widest pr-8">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
-                    <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground font-bold animate-pulse">Scanning Warehouse...</TableCell></TableRow>
-                  ) : filteredProducts.map((product) => (
-                    <TableRow 
-                      key={product.id} 
+                  {filteredTotal === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Empty>
+                          <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                              <Package />
+                            </EmptyMedia>
+                            <EmptyTitle>No products found</EmptyTitle>
+                            <EmptyDescription>
+                              No products match your search. Try a different SKU or product name.
+                            </EmptyDescription>
+                          </EmptyHeader>
+                        </Empty>
+                      </TableCell>
+                    </TableRow>
+                  ) : pagedProducts.map((product) => (
+                    <TableRow
+                      key={product.id}
                       className="cursor-pointer border-border/30 hover:bg-muted/30 transition-colors"
                       onClick={() => handleForecast(product)}
                     >
@@ -224,9 +257,9 @@ export default function InventoryPage() {
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-3">
                           <div className="w-24 h-2 bg-muted/40 rounded-full overflow-hidden">
-                            <div 
-                              className={cn("h-full transition-all duration-500", product.stockQuantity <= product.minStockLevel ? "bg-red-500" : "bg-primary")} 
-                              style={{ width: `${Math.min((product.stockQuantity / 100) * 100, 100)}%` }} 
+                            <div
+                              className={cn("h-full transition-all duration-500", product.stockQuantity <= product.minStockLevel ? "bg-red-500" : "bg-primary")}
+                              style={{ width: `${Math.min((product.stockQuantity / 100) * 100, 100)}%` }}
                             />
                           </div>
                           <span className="font-bold text-lg w-10">{product.stockQuantity}</span>
@@ -239,9 +272,9 @@ export default function InventoryPage() {
                                 <Edit className="h-4 w-4" />
                               </Link>
                            </Button>
-                           <Button 
-                             variant="ghost" 
-                             size="icon" 
+                           <Button
+                             variant="ghost"
+                             size="icon"
                              className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive"
                              onClick={() => {
                                 if(confirm(`Are you sure you want to delete ${product.name}?`)) {
@@ -262,6 +295,13 @@ export default function InventoryPage() {
                   ))}
                 </TableBody>
               </Table>
+              <DataTablePagination
+                total={filteredTotal}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+              />
             </CardContent>
           </Card>
         </div>
@@ -288,7 +328,7 @@ export default function InventoryPage() {
                     {isForecasting ? (
                       <div className="flex flex-col items-center justify-center py-8 gap-3">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm font-medium text-muted-foreground text-muted-foreground">Analyzing Sales Velocity...</p>
+                        <p className="text-sm font-medium text-muted-foreground">Analyzing Sales Velocity...</p>
                       </div>
                     ) : forecast && (
                       <div className="space-y-4">
@@ -300,11 +340,11 @@ export default function InventoryPage() {
                           "{forecast.recommendation}"
                         </div>
                         <div className="pt-4 border-t border-border/50">
-                           <p className="text-sm font-medium text-muted-foreground text-muted-foreground mb-1">Target Reorder Date</p>
+                           <p className="text-sm font-medium text-muted-foreground mb-1">Target Reorder Date</p>
                            <p className="text-xl font-bold text-foreground">{forecast.predicted_reorder_date}</p>
                         </div>
-                        <Button 
-                          className="w-full font-medium gap-2" 
+                        <Button
+                          className="w-full font-medium gap-2"
                           onClick={handleGeneratePurchaseOrder}
                           disabled={isGeneratingPO}
                         >

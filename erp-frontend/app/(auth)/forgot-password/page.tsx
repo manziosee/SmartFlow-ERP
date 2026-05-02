@@ -5,20 +5,27 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Zap, Loader2, ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { Zap, Loader2, ArrowLeft, Mail, CheckCircle, AlertCircle } from "lucide-react";
+import { authApi } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setIsSubmitted(true);
+    setError("");
+    try {
+      await authApi.forgotPassword(email);
+      setIsSubmitted(true);
+    } catch {
+      setError("Unable to send reset instructions. Please check your email and try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,15 +46,20 @@ export default function ForgotPasswordPage() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
                 <Mail className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                Forgot your password?
-              </h2>
+              <h2 className="text-2xl font-bold tracking-tight">Forgot your password?</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 No worries! Enter your email and we&apos;ll send you reset instructions.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="email">Email address</Label>
                 <div className="mt-2">
@@ -92,17 +104,13 @@ export default function ForgotPasswordPage() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                Check your email
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                We sent a password reset link to
-              </p>
+              <h2 className="text-2xl font-bold tracking-tight">Check your email</h2>
+              <p className="mt-2 text-sm text-muted-foreground">We sent a password reset link to</p>
               <p className="mt-1 font-medium">{email}</p>
               <p className="mt-4 text-sm text-muted-foreground">
                 Didn&apos;t receive the email? Check your spam folder or{" "}
                 <button
-                  onClick={() => setIsSubmitted(false)}
+                  onClick={() => { setIsSubmitted(false); setError(""); }}
                   className="font-medium text-foreground hover:underline"
                 >
                   try another email

@@ -23,10 +23,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Upload, Building, CreditCard, Bell, Shield, Palette, Database } from "lucide-react";
+import { Loader2, Upload, Building, CreditCard, Bell, Shield, Palette, Database, Eye, EyeOff } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { backupApi } from "@/lib/api";
+import { authApi, backupApi } from "@/lib/api";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -45,6 +45,10 @@ export default function SettingsPage() {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupTime, setBackupTime] = useState("02:00");
 
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwLoading, setPwLoading] = useState(false);
+  const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
+
   useEffect(() => {
     if (user?.role === 'ADMIN') {
       backupApi.getStats().then(setBackupStats).catch(console.error);
@@ -62,6 +66,28 @@ export default function SettingsPage() {
       toast.error("Failed to perform backup.");
     } finally {
       setIsBackingUp(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwForm.next.length < 8) {
+      toast.error("New password must be at least 8 characters.");
+      return;
+    }
+    if (pwForm.next !== pwForm.confirm) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+    setPwLoading(true);
+    try {
+      await authApi.changePassword(pwForm.current, pwForm.next);
+      toast.success("Password updated successfully.");
+      setPwForm({ current: "", next: "", confirm: "" });
+    } catch {
+      toast.error("Current password is incorrect or update failed.");
+    } finally {
+      setPwLoading(false);
     }
   };
 

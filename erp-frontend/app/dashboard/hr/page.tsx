@@ -17,12 +17,19 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import { hrApi } from "@/lib/api";
+import { PageSkeleton } from "@/components/ui/skeleton";
+import { PageBreadcrumb } from "@/components/ui/page-breadcrumb";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { useTable } from "@/hooks/use-table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 export default function HRPage() {
   const { formatCurrency } = useCurrency();
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     hrApi.getEmployees()
@@ -43,15 +50,30 @@ export default function HRPage() {
     }
   };
 
+  const filteredEmployees = employees.filter((emp) => {
+    const fullName = `${emp.firstName || ""} ${emp.lastName || ""}`.toLowerCase();
+    return (
+      fullName.includes(searchQuery.toLowerCase()) ||
+      (emp.jobTitle || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (emp.department || "").toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  const { sort, toggleSort, page, setPage, pageSize, setPageSize, paginated: pagedEmployees, total: filteredTotal } =
+    useTable(filteredEmployees, { pageSize: 20 });
+
+  if (loading) return <PageSkeleton cards={3} rows={8} cols={6} />;
+
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <div className="flex flex-col gap-1 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Talent Control</h1>
           <p className="text-sm text-muted-foreground">Employee lifecycles and automated salary disbursements</p>
         </div>
         <div className="flex gap-3">
-          <Button 
+          <Button
             className="gap-2 rounded-2xl font-bold bg-foreground text-background hover:bg-foreground/90 h-12 px-6"
             onClick={handleRunPayroll}
             disabled={isProcessing}
@@ -86,7 +108,7 @@ export default function HRPage() {
             <h3 className="text-2xl font-semibold tracking-tight">
               {formatCurrency(employees.reduce((acc, e) => acc + (e.baseSalary || 0), 0))}
             </h3>
-            
+
           </CardContent>
         </Card>
 
@@ -122,24 +144,51 @@ export default function HRPage() {
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search staff..." className="h-10 rounded-xl bg-muted/20 pl-10 text-xs font-bold" />
+                <Input
+                  placeholder="Search staff..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-10 rounded-xl bg-muted/20 pl-10 text-xs font-bold"
+                />
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent border-border/50">
-                    <TableHead className="pl-8 font-bold uppercase text-[10px] tracking-widest">Employee</TableHead>
-                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">Department</TableHead>
-                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">Salary</TableHead>
-                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">Status</TableHead>
+                    <TableHead className="pl-8 font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="firstName" label="Employee" sort={sort} onSort={toggleSort} />
+                    </TableHead>
+                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="department" label="Department" sort={sort} onSort={toggleSort} />
+                    </TableHead>
+                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="baseSalary" label="Salary" sort={sort} onSort={toggleSort} />
+                    </TableHead>
+                    <TableHead className="font-bold uppercase text-[10px] tracking-widest">
+                      <SortableHeader column="status" label="Status" sort={sort} onSort={toggleSort} />
+                    </TableHead>
                     <TableHead className="text-right pr-8 font-bold uppercase text-[10px] tracking-widest">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
-                    <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground font-bold animate-pulse">Syncing Employee Records...</TableCell></TableRow>
-                  ) : employees.map((emp) => (
+                  {filteredTotal === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Empty>
+                          <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                              <Users />
+                            </EmptyMedia>
+                            <EmptyTitle>No employees found</EmptyTitle>
+                            <EmptyDescription>
+                              No employees match your search. Try a different name, title, or department.
+                            </EmptyDescription>
+                          </EmptyHeader>
+                        </Empty>
+                      </TableCell>
+                    </TableRow>
+                  ) : pagedEmployees.map((emp) => (
                     <TableRow key={emp.id} className="group border-border/30 hover:bg-muted/20 transition-colors">
                       <TableCell className="pl-8 py-4">
                         <div className="flex items-center gap-3">
@@ -173,9 +222,9 @@ export default function HRPage() {
                                  <Edit className="h-4 w-4" />
                                </Link>
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => {
                                  if(confirm(`Are you sure you want to remove ${emp.firstName}?`)) {
@@ -196,6 +245,13 @@ export default function HRPage() {
                   ))}
                 </TableBody>
               </Table>
+              <DataTablePagination
+                total={filteredTotal}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+              />
             </CardContent>
           </Card>
         </div>
@@ -216,8 +272,8 @@ export default function HRPage() {
                    <p className="font-bold">Julian Chen</p>
                    <p className="text-xs font-bold text-white/60">UX Designer • Starts Jan 20</p>
                  </div>
-                 <Button 
-                   variant="secondary" 
+                 <Button
+                   variant="secondary"
                    className="w-full rounded-xl font-bold bg-white text-black hover:bg-white/90 shadow-xl"
                    onClick={() => {
                      toast.info("Recruitment Pipeline: 1 Candidate in Interview stage (Julian Chen)");
@@ -234,8 +290,8 @@ export default function HRPage() {
                <CardTitle className="text-xl font-bold tracking-tight">Management Suite</CardTitle>
              </CardHeader>
              <CardContent className="p-8 pt-0 space-y-3">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full justify-start gap-3 rounded-xl font-bold px-4 h-12 hover:bg-background border border-transparent hover:border-border/50 transition-all"
                   onClick={() => {
                     const csv = "Employee,Department,BaseSalary,Status\n" + employees.map(e => `${e.firstName} ${e.lastName},${e.department},${e.baseSalary},${e.status}`).join("\n");
@@ -250,8 +306,8 @@ export default function HRPage() {
                 >
                   <Download className="h-4 w-4 text-emerald-600" /> Export Payroll Report
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full justify-start gap-3 rounded-xl font-bold px-4 h-12 hover:bg-background border border-transparent hover:border-border/50 transition-all"
                   onClick={() => {
                     if (hrApi && typeof hrApi.getBenefits === 'function') {
@@ -265,8 +321,8 @@ export default function HRPage() {
                 >
                   <Briefcase className="h-4 w-4 text-primary" /> Manage Benefits
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full justify-start gap-3 rounded-xl font-bold px-4 h-12 hover:bg-background border border-transparent hover:border-border/50 transition-all"
                   onClick={() => {
                     hrApi.getCompliance().then(data => {

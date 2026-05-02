@@ -1,6 +1,7 @@
 package com.smartflow.erp.invoice;
 
 import com.smartflow.erp.ai.AIClient;
+import com.smartflow.erp.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ public class SettlementController {
 
     private final AIClient aiClient;
     private final InvoiceRepository invoiceRepository;
+    private final EmailService emailService;
 
     /**
      * Smart Settlement Endpoint:
@@ -24,6 +26,7 @@ public class SettlementController {
      * 3. Sends data to Clojure (Rules Engine).
      * 4. Clojure calls Python (AI) to get risk assessment.
      * 5. Returns a strategy and allocation plan.
+     * B17: Sends payment-received email notification to the client.
      */
     @PostMapping("/calculate")
     public ResponseEntity<Map<String, Object>> calculateSmartSettlement(
@@ -31,19 +34,31 @@ public class SettlementController {
             @RequestParam double amount) {
 
         List<Invoice> invoices = invoiceRepository.findByClientIdAndStatus(clientId, Invoice.Status.PENDING);
-        
-        // Prepare simplified data for Clojure
+
         List<Map<String, Object>> invoiceData = new ArrayList<>();
         for (Invoice inv : invoices) {
             invoiceData.add(Map.of(
-                "id", inv.getId(),
-                "amount", inv.getAmount(),
-                "dueDate", inv.getDueDate().toString()
+                    "id", inv.getId(),
+                    "amount", inv.getAmount(),
+                    "dueDate", inv.getDueDate().toString()
             ));
         }
 
-        // Call Clojure Rules Engine
         Map<String, Object> strategy = aiClient.getAllocationStrategy(amount, invoiceData);
+
+        // B17: Notify client of payment received (best-effort — uses first matching invoice for client details)
+        invoices.stream()
+                .filter(inv -> inv.getClient() != null
+                        && inv.getClient().getEmail() != null
+                        && !inv.getClient().getEmail().isBlank())
+                .findFirst()
+                .ifPresent(inv -> emailService.sendPaymentReceivedNotification(
+                        inv.getClient().getEmail(),
+                        inv.getClient().getName(),
+                        "multiple invoices",
+                        String.valueOf(amount),
+                        inv.getCurrency() != null ? inv.getCurrency() : "RWF"
+                ));
 
         return ResponseEntity.ok(strategy);
     }
